@@ -28,9 +28,15 @@ interface ScanContext {
  * @param dirPath - Directory path to list files from
  * @param recursive - Whether to recursively list files in subdirectories
  * @param limit - Maximum number of files to return
+ * @param followSymlinks - Whether to follow symbolic links to directories (default: false)
  * @returns Tuple of [file paths array, whether the limit was reached]
  */
-export async function listFiles(dirPath: string, recursive: boolean, limit: number): Promise<[string[], boolean]> {
+export async function listFiles(
+	dirPath: string,
+	recursive: boolean,
+	limit: number,
+	followSymlinks: boolean = false,
+): Promise<[string[], boolean]> {
 	// Early return for limit of 0 - no need to scan anything
 	if (limit === 0) {
 		return [[], false]
@@ -52,7 +58,13 @@ export async function listFiles(dirPath: string, recursive: boolean, limit: numb
 		const ignoreInstance = await createIgnoreInstance(dirPath)
 		// Calculate remaining limit for directories
 		const remainingLimit = Math.max(0, limit - files.length)
-		const directories = await listFilteredDirectories(dirPath, false, ignoreInstance, remainingLimit)
+		const directories = await listFilteredDirectories(
+			dirPath,
+			false,
+			ignoreInstance,
+			remainingLimit,
+			followSymlinks,
+		)
 		return formatAndCombineResults(files, directories, limit)
 	}
 
@@ -61,14 +73,14 @@ export async function listFiles(dirPath: string, recursive: boolean, limit: numb
 	const ignoreInstance = await createIgnoreInstance(dirPath)
 	// Calculate remaining limit for directories
 	const remainingLimit = Math.max(0, limit - files.length)
-	const directories = await listFilteredDirectories(dirPath, true, ignoreInstance, remainingLimit)
+	const directories = await listFilteredDirectories(dirPath, true, ignoreInstance, remainingLimit, followSymlinks)
 
 	// Combine and check if we hit the limits
 	const [results, limitReached] = formatAndCombineResults(files, directories, limit)
 
 	// If we hit the limit, ensure all first-level directories are included
 	if (limitReached) {
-		const firstLevelDirs = await getFirstLevelDirectories(dirPath, ignoreInstance)
+		const firstLevelDirs = await getFirstLevelDirectories(dirPath, ignoreInstance, followSymlinks)
 		return ensureFirstLevelDirectoriesIncluded(results, firstLevelDirs, limit)
 	}
 
@@ -78,7 +90,11 @@ export async function listFiles(dirPath: string, recursive: boolean, limit: numb
 /**
  * Get only the first-level directories in a path
  */
-async function getFirstLevelDirectories(dirPath: string, ignoreInstance: ReturnType<typeof ignore>): Promise<string[]> {
+async function getFirstLevelDirectories(
+	dirPath: string,
+	ignoreInstance: ReturnType<typeof ignore>,
+	followSymlinks: boolean = false,
+): Promise<string[]> {
 	const absolutePath = path.resolve(dirPath)
 	const directories: string[] = []
 
@@ -86,7 +102,7 @@ async function getFirstLevelDirectories(dirPath: string, ignoreInstance: ReturnT
 		const entries = await fs.promises.readdir(absolutePath, { withFileTypes: true })
 
 		for (const entry of entries) {
-			if (entry.isDirectory() && !entry.isSymbolicLink()) {
+			if (entry.isDirectory() && (!entry.isSymbolicLink() || followSymlinks)) {
 				const fullDirPath = path.join(absolutePath, entry.name)
 				const context: ScanContext = {
 					isTargetDir: false,
@@ -389,6 +405,7 @@ async function listFilteredDirectories(
 	recursive: boolean,
 	ignoreInstance: ReturnType<typeof ignore>,
 	limit?: number,
+	followSymlinks: boolean = false,
 ): Promise<string[]> {
 	const absolutePath = path.resolve(dirPath)
 	const directories: string[] = []
@@ -408,10 +425,27 @@ async function listFilteredDirectories(
 		ignoreInstance,
 	}
 
+	// Track visited real paths to detect cycles when following symlinks
+	const visitedRealPaths = new Set<string>()
+
 	async function scanDirectory(currentPath: string, context: ScanContext): Promise<boolean> {
 		// Check if we've reached the limit
 		if (dirCount >= effectiveLimit) {
 			return true // Signal that limit was reached
+		}
+
+		// Detect cycles when following symlinks
+		if (followSymlinks) {
+			let realPath: string
+			try {
+				realPath = await fs.promises.realpath(currentPath)
+			} catch {
+				realPath = currentPath
+			}
+			if (visitedRealPaths.has(realPath)) {
+				return false // Cycle detected — skip silently
+			}
+			visitedRealPaths.add(realPath)
 		}
 
 		try {
@@ -419,13 +453,14 @@ async function listFilteredDirectories(
 			const entries = await fs.promises.readdir(currentPath, { withFileTypes: true })
 
 			// Filter for directories only, excluding symbolic links to prevent circular traversal
+			// (unless followSymlinks is enabled)
 			for (const entry of entries) {
 				// Check limit before processing each directory
 				if (dirCount >= effectiveLimit) {
 					return true
 				}
 
-				if (entry.isDirectory() && !entry.isSymbolicLink()) {
+				if (entry.isDirectory() && (!entry.isSymbolicLink() || followSymlinks)) {
 					const dirName = entry.name
 					const fullDirPath = path.join(currentPath, dirName)
 

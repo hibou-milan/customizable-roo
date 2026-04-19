@@ -57,9 +57,14 @@
 		"capabilities": "Capabilities",
 		"modesNote": "Modes section is always included. Use the Modes tab to configure per-mode exclusion from mode switching.",
 		"rules": "Rules",
+		"systemInfo": "System Information",
 		"objective": "Objective",
 		"overrideLabel": "Override text (empty = use built-in default)",
+		"overrideLabelDynamic": "Override text — supports {{cwd}}, {{shell}}, {{os}}, {{homeDir}}, {{chainOp}} variables; empty = use built-in default",
 		"resetToDefault": "Reset to default",
+		"setToDefault": "Set to built-in default text",
+		"clearOverride": "Clear override (revert to default)",
+		"dynamicSectionNote": "This section contains dynamic content. Use template variables to reference runtime values.",
 		"sectionEnabled": "Include this section"
 	},
 	"modes": {
@@ -761,6 +766,10 @@
 		"enableSubfolderRules": {
 			"label": "Enable subfolder rules",
 			"description": "Recursively discover and load .roo/rules and AGENTS.md files from subdirectories. Useful for monorepos with per-package rules."
+		},
+		"followSymlinks": {
+			"label": "Follow symbolic links when listing files",
+			"description": "When enabled, symbolic links to directories are traversed during file listing and search. Circular symlinks are detected and skipped automatically."
 		}
 	},
 	"terminal": {

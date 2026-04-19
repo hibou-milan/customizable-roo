@@ -6,6 +6,7 @@ import { Mode, modes, defaultModeSlug, getModeBySlug, getGroupName, getModeSelec
 import { DiffStrategy } from "../../shared/tools"
 import { formatLanguage } from "../../shared/language"
 import { isEmpty } from "../../utils/object"
+import { arePathsEqual } from "../../utils/path"
 
 import { McpHub } from "../../services/mcp/McpHub"
 import { CodeIndexManager } from "../../services/code-index/manager"
@@ -25,7 +26,7 @@ import {
 	getSkillsSection,
 } from "./sections"
 
-const DEFAULT_ROLE_PLACEHOLDER =
+export const DEFAULT_ROLE_PLACEHOLDER =
 	"IMPORTANT: Pay close attention to role and instruction sections that will appear " +
 	"in the conversation. When you see a [ROLE AND INSTRUCTIONS] block, treat it as " +
 	"your active persona and follow it precisely."
@@ -87,6 +88,10 @@ async function generatePrompt(
 	// Tools catalog is not included in the system prompt.
 	const toolsCatalog = ""
 
+	// Compute additional workspace folders (all folders except the primary cwd)
+	const allFolders = vscode.workspace.workspaceFolders?.map((f) => f.uri.fsPath) ?? []
+	const additionalWorkspaceFolders = allFolders.filter((f) => !arePathsEqual(f, cwd))
+
 	const sec = settings?.sections ?? {}
 
 	// Role content
@@ -113,16 +118,25 @@ async function generatePrompt(
 	}
 
 	if (sec.capabilitiesEnabled !== false)
-		promptParts.push(getCapabilitiesSection(cwd, shouldIncludeMcp ? mcpHub : undefined, sec.capabilitiesOverride))
+		promptParts.push(
+			getCapabilitiesSection(
+				cwd,
+				shouldIncludeMcp ? mcpHub : undefined,
+				sec.capabilitiesOverride,
+				additionalWorkspaceFolders,
+			),
+		)
 
 	// MODES always included (content filtered by modesExcluded per-mode)
 	promptParts.push(modesSection)
 
 	if (skillsSection) promptParts.push(skillsSection)
 
-	if (sec.rulesEnabled !== false) promptParts.push(getRulesSection(cwd, settings, sec.rulesOverride))
+	if (sec.rulesEnabled !== false)
+		promptParts.push(getRulesSection(cwd, settings, sec.rulesOverride, additionalWorkspaceFolders))
 
-	promptParts.push(getSystemInfoSection(cwd))
+	if (sec.systemInfoEnabled !== false)
+		promptParts.push(getSystemInfoSection(cwd, additionalWorkspaceFolders, sec.systemInfoOverride))
 
 	if (sec.objectiveEnabled !== false) promptParts.push(getObjectiveSection(sec.objectiveOverride))
 

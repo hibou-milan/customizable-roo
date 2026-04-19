@@ -85,6 +85,7 @@ export const systemPromptSectionsSchema = z.object({
 	toolUseEnabled: z.boolean().optional(),
 	capabilitiesEnabled: z.boolean().optional(),
 	rulesEnabled: z.boolean().optional(),
+	systemInfoEnabled: z.boolean().optional(),
 	objectiveEnabled: z.boolean().optional(),
 	customInstructionsEnabled: z.boolean().optional(),
 
@@ -94,6 +95,7 @@ export const systemPromptSectionsSchema = z.object({
 	toolUseGuidelinesOverride: z.string().optional(),
 	capabilitiesOverride: z.string().optional(),
 	rulesOverride: z.string().optional(),
+	systemInfoOverride: z.string().optional(),
 	objectiveOverride: z.string().optional(),
 
 	// Role/instructions decoupling
@@ -193,6 +195,13 @@ export const globalSettingsSchema = z.object({
 	maxWorkspaceFiles: z.number().optional(),
 	showRooIgnoredFiles: z.boolean().optional(),
 	enableSubfolderRules: z.boolean().optional(),
+	/**
+	 * Whether to follow symbolic links when listing the top-level directory or searching.
+	 * When false (default), symlinked directories are not traversed to prevent infinite loops.
+	 * When true, symlinked directories are traversed; circular symlinks are detected and skipped.
+	 * @default false
+	 */
+	followSymlinks: z.boolean().optional(),
 	maxImageFileSize: z.number().optional(),
 	maxTotalImageSize: z.number().optional(),
 

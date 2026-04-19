@@ -1,6 +1,7 @@
 import type { SystemPromptSettings } from "../types"
 
 import { getShell } from "../../../utils/shell"
+import { buildTemplateVars, applyTemplateVars } from "./template"
 
 /**
  * Returns the appropriate command chaining operator based on the user's shell.
@@ -62,20 +63,26 @@ When asked about your creator, vendor, or company, respond with:
 - "I don't have information about specific vendors"`
 }
 
-export function getRulesSection(cwd: string, settings?: SystemPromptSettings, override?: string): string {
+export function getRulesSection(
+	cwd: string,
+	settings?: SystemPromptSettings,
+	override?: string,
+	additionalWorkspaceFolders?: string[],
+): string {
 	if (override?.trim()) {
+		const vars = buildTemplateVars(cwd)
 		return `====
 
 RULES
 
-${override.trim()}`
+${applyTemplateVars(override.trim(), vars)}`
 	}
 
 	// Get shell-appropriate command chaining operator
 	const chainOp = getCommandChainOperator()
 	const chainNote = getCommandChainNote()
 
-	return `====
+	let rules = `====
 
 RULES
 
@@ -86,7 +93,7 @@ RULES
 - Before using the execute_command tool, you must first think about the SYSTEM INFORMATION context provided to understand the user's environment and tailor your commands to ensure they are compatible with their system. You must also consider if the command you need to run should be executed in a specific directory outside of the current working directory '${cwd.toPosix()}', and if so prepend with \`cd\`'ing into that directory ${chainOp} then executing the command (as one command since you are stuck operating from '${cwd.toPosix()}'). For example, if you needed to run \`npm install\` in a project outside of '${cwd.toPosix()}', you would need to prepend with a \`cd\` i.e. pseudocode for this would be \`cd (path to project) ${chainOp} (command, in this case npm install)\`.${chainNote ? ` ${chainNote}` : ""}
 - Some modes have restrictions on which files they can edit. If you attempt to edit a restricted file, the operation will be rejected with a FileRestrictionError that will specify which file patterns are allowed for the current mode.
 - Be sure to consider the type of project (e.g. Python, JavaScript, web application) when determining the appropriate structure and files to include. Also consider what files may be most relevant to accomplishing the task, for example looking at a project's manifest file would help you understand the project's dependencies, which you could incorporate into any code you write.
-  * For example, in architect mode trying to edit app.js would be rejected because architect mode can only edit files matching "\\.md$"
+	 * For example, in architect mode trying to edit app.js would be rejected because architect mode can only edit files matching "\\.md$"
 - When making changes to code, always consider the context in which the code is being used. Ensure that your changes are compatible with the existing codebase and that they follow the project's coding standards and best practices.
 - Do not ask for more information than necessary. Use the tools provided to accomplish the user's request efficiently and effectively. When you've completed your task, you must use the attempt_completion tool to present the result to the user. The user may provide feedback, which you can use to make improvements and try again.
 - You are only allowed to ask the user questions using the ask_followup_question tool. Use this tool only when you need additional details to complete a task, and be sure to use a clear and concise question that will help you move forward with the task. When you ask a question, provide the user with 2-4 suggested answers based on your question so they don't need to do so much typing. The suggestions should be specific, actionable, and directly related to the completed task. They should be ordered by priority or logical sequence. However if you can use the available tools to avoid having to ask the user questions, you should do so. For example, if the user mentions a file that may be in an outside directory like the Desktop, you should use the list_files tool to list the files in the Desktop and check if the file they are talking about is there, rather than asking the user to provide the file path themselves.
@@ -100,4 +107,10 @@ RULES
 - Before executing commands, check the "Actively Running Terminals" section in environment_details. If present, consider how these active processes might impact your task. For example, if a local development server is already running, you wouldn't need to start it again. If no active terminals are listed, proceed with command execution as normal.
 - MCP operations should be used one at a time, similar to other tool usage. Wait for confirmation of success before proceeding with additional operations.
 - It is critical you wait for the user's response after each tool use, in order to confirm the success of the tool use. For example, if asked to make a todo app, you would create a file, wait for the user's response it was created successfully, then create another file if needed, wait for the user's response it was created successfully, etc.${settings?.isStealthModel ? getVendorConfidentialitySection() : ""}`
+
+	if (additionalWorkspaceFolders?.length) {
+		rules += `\n- Additional workspace folders are available at: ${additionalWorkspaceFolders.map((f) => f.toPosix()).join(", ")}. You can access files in these folders using their full paths.`
+	}
+
+	return rules
 }

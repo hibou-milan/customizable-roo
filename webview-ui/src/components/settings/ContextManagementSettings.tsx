@@ -33,6 +33,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	maxWorkspaceFiles: number
 	showRooIgnoredFiles?: boolean
 	enableSubfolderRules?: boolean
+	followSymlinks?: boolean
 	maxImageFileSize?: number
 	maxTotalImageSize?: number
 	profileThresholds?: Record<string, number>
@@ -51,6 +52,7 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "maxWorkspaceFiles"
 		| "showRooIgnoredFiles"
 		| "enableSubfolderRules"
+		| "followSymlinks"
 		| "maxImageFileSize"
 		| "maxTotalImageSize"
 		| "profileThresholds"
@@ -71,6 +73,7 @@ export const ContextManagementSettings = ({
 	maxWorkspaceFiles,
 	showRooIgnoredFiles,
 	enableSubfolderRules,
+	followSymlinks,
 	setCachedStateField,
 	maxImageFileSize,
 	maxTotalImageSize,
@@ -243,6 +246,23 @@ export const ContextManagementSettings = ({
 					</VSCodeCheckbox>
 					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
 						{t("settings:contextManagement.enableSubfolderRules.description")}
+					</div>
+				</SearchableSetting>
+
+				<SearchableSetting
+					settingId="context-follow-symlinks"
+					section="contextManagement"
+					label={t("settings:contextManagement.followSymlinks.label")}>
+					<VSCodeCheckbox
+						checked={followSymlinks ?? false}
+						onChange={(e: any) => setCachedStateField("followSymlinks", e.target.checked)}
+						data-testid="follow-symlinks-checkbox">
+						<label className="block font-medium mb-1">
+							{t("settings:contextManagement.followSymlinks.label")}
+						</label>
+					</VSCodeCheckbox>
+					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
+						{t("settings:contextManagement.followSymlinks.description")}
 					</div>
 				</SearchableSetting>
 

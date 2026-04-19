@@ -48,6 +48,7 @@ vi.mock("fs", () => ({
 		access: vi.fn().mockRejectedValue(new Error("Not found")),
 		readFile: vi.fn().mockResolvedValue(""),
 		readdir: vi.fn().mockResolvedValue([]),
+		realpath: vi.fn().mockImplementation(async (p: string) => p),
 	},
 }))
 
@@ -556,5 +557,97 @@ describe("buildRecursiveArgs edge cases", () => {
 		// Should NOT have the special flags for hidden directories
 		expect(args).not.toContain("--no-ignore-vcs")
 		expect(args).not.toContain("--no-ignore")
+	})
+})
+
+describe("listFiles followSymlinks support", () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it("should skip symlinked directories by default (followSymlinks=false)", async () => {
+		const mockReaddir = vi.mocked(fs.promises.readdir)
+
+		// Directory with a regular dir and a symlinked dir
+		mockReaddir.mockResolvedValue([
+			{ name: "regular_dir", isDirectory: () => true, isSymbolicLink: () => false, isFile: () => false } as any,
+			{ name: "symlink_dir", isDirectory: () => true, isSymbolicLink: () => true, isFile: () => false } as any,
+		])
+
+		const mockSpawn = vi.mocked(childProcess.spawn)
+		const mockProcess = {
+			stdout: { on: vi.fn() },
+			stderr: { on: vi.fn() },
+			on: vi.fn((event, callback) => {
+				if (event === "close") setTimeout(() => callback(0), 10)
+			}),
+			kill: vi.fn(),
+		}
+		mockSpawn.mockReturnValue(mockProcess as any)
+
+		const [results] = await listFiles("/test/dir", false, 100)
+
+		// symlink_dir should NOT be in results (followSymlinks defaults to false)
+		const resultNames = results.map((r) => r.split("/").filter(Boolean).pop())
+		expect(resultNames).toContain("regular_dir")
+		expect(resultNames).not.toContain("symlink_dir")
+	})
+
+	it("should include symlinked directories when followSymlinks=true", async () => {
+		const mockReaddir = vi.mocked(fs.promises.readdir)
+
+		// Directory with a regular dir and a symlinked dir
+		mockReaddir.mockResolvedValue([
+			{ name: "regular_dir", isDirectory: () => true, isSymbolicLink: () => false, isFile: () => false } as any,
+			{ name: "symlink_dir", isDirectory: () => true, isSymbolicLink: () => true, isFile: () => false } as any,
+		])
+
+		const mockSpawn = vi.mocked(childProcess.spawn)
+		const mockProcess = {
+			stdout: { on: vi.fn() },
+			stderr: { on: vi.fn() },
+			on: vi.fn((event, callback) => {
+				if (event === "close") setTimeout(() => callback(0), 10)
+			}),
+			kill: vi.fn(),
+		}
+		mockSpawn.mockReturnValue(mockProcess as any)
+
+		const [results] = await listFiles("/test/dir", false, 100, true)
+
+		// symlink_dir SHOULD be in results when followSymlinks=true
+		const resultNames = results.map((r) => r.split("/").filter(Boolean).pop())
+		expect(resultNames).toContain("regular_dir")
+		expect(resultNames).toContain("symlink_dir")
+	})
+
+	it("should handle circular symlinks without infinite loop when followSymlinks=true", async () => {
+		const mockReaddir = vi.mocked(fs.promises.readdir)
+		const mockRealpath = vi.mocked((fs.promises as any).realpath)
+
+		// Simulate a circular symlink: /test/dir/loop -> /test/dir
+		// Both the root and the symlinked dir resolve to the same real path
+		const circularPath = "/test/dir"
+		mockRealpath.mockResolvedValue(circularPath)
+
+		mockReaddir.mockResolvedValue([
+			{ name: "loop", isDirectory: () => true, isSymbolicLink: () => true, isFile: () => false } as any,
+		])
+
+		const mockSpawn = vi.mocked(childProcess.spawn)
+		const mockProcess = {
+			stdout: { on: vi.fn() },
+			stderr: { on: vi.fn() },
+			on: vi.fn((event, callback) => {
+				if (event === "close") setTimeout(() => callback(0), 10)
+			}),
+			kill: vi.fn(),
+		}
+		mockSpawn.mockReturnValue(mockProcess as any)
+
+		// Should complete without hanging or throwing
+		const result = await listFiles("/test/dir", true, 100, true)
+		expect(result).toBeDefined()
+		expect(Array.isArray(result[0])).toBe(true)
 	})
 })

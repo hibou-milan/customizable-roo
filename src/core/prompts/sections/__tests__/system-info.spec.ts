@@ -63,4 +63,75 @@ describe("getSystemInfoSection", () => {
 
 		expect(result).toContain("Operating System: win32 10.0.19043")
 	})
+
+	it("should not include additional workspace folders section when none provided", () => {
+		mockOsName.mockReturnValue("Ubuntu 22.04")
+
+		const result = getSystemInfoSection(mockCwd, [])
+
+		expect(result).not.toContain("Additional Workspace Folders")
+		expect(result).not.toContain("Additional workspace folders")
+	})
+
+	it("should include additional workspace folders when provided", () => {
+		mockOsName.mockReturnValue("Ubuntu 22.04")
+
+		const result = getSystemInfoSection(mockCwd, ["/extra/folder"])
+
+		expect(result).toContain("Additional Workspace Folders:")
+		expect(result).toContain("/extra/folder")
+	})
+
+	it("should include multiple additional workspace folders", () => {
+		mockOsName.mockReturnValue("Ubuntu 22.04")
+
+		const result = getSystemInfoSection(mockCwd, ["/extra/folder1", "/extra/folder2"])
+
+		expect(result).toContain("Additional Workspace Folders:")
+		expect(result).toContain("/extra/folder1")
+		expect(result).toContain("/extra/folder2")
+	})
+
+	it("should append note about additional folders in description when folders present", () => {
+		mockOsName.mockReturnValue("Ubuntu 22.04")
+
+		const result = getSystemInfoSection(mockCwd, ["/extra/folder"])
+
+		expect(result).toContain("Additional workspace folders are also available")
+	})
+
+	it("should apply override text when provided", () => {
+		mockOsName.mockReturnValue("Ubuntu 22.04")
+
+		const result = getSystemInfoSection(mockCwd, [], "Custom: {{cwd}}")
+
+		expect(result).toContain("Custom:")
+		expect(result).toContain(mockCwd)
+		expect(result).not.toContain("Operating System")
+		expect(result).not.toContain("SYSTEM INFORMATION")
+	})
+
+	it("should fall back to default when override is empty string", () => {
+		mockOsName.mockReturnValue("Ubuntu 22.04")
+
+		const result = getSystemInfoSection(mockCwd, [], "")
+
+		expect(result).toContain("Operating System: Ubuntu 22.04")
+	})
+
+	it("should fall back to default when override is whitespace-only", () => {
+		mockOsName.mockReturnValue("Ubuntu 22.04")
+
+		const result = getSystemInfoSection(mockCwd, [], "   ")
+
+		expect(result).toContain("Operating System: Ubuntu 22.04")
+	})
+
+	it("should replace {{cwd}} template variable in override", () => {
+		mockOsName.mockReturnValue("Ubuntu 22.04")
+
+		const result = getSystemInfoSection(mockCwd, [], "Workspace: {{cwd}}")
+
+		expect(result).toBe(`Workspace: ${mockCwd}`)
+	})
 })
