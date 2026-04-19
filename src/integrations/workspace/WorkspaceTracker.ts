@@ -30,7 +30,7 @@ class WorkspaceTracker {
 			return
 		}
 		const tempCwd = this.cwd
-		const [files, _] = await listFiles(tempCwd, true, MAX_INITIAL_FILES)
+		const [files] = await listFiles(tempCwd, true, MAX_INITIAL_FILES)
 		if (this.prevWorkSpacePath !== tempCwd) {
 			return
 		}

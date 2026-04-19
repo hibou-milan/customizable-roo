@@ -127,7 +127,7 @@ describe("getEnvironmentDetails", () => {
 			customInstructions: "Custom instructions",
 		})
 		;(isToolAllowedForMode as Mock).mockReturnValue(true)
-		;(listFiles as Mock).mockResolvedValue([["file1.ts", "file2.ts"], false])
+		;(listFiles as Mock).mockResolvedValue([["file1.ts", "file2.ts"], new Set(), false])
 		;(formatResponse.formatFilesList as Mock).mockReturnValue("file1.ts\nfile2.ts")
 		;(arePathsEqual as Mock).mockReturnValue(false)
 		;(Terminal.compressTerminalOutput as Mock).mockImplementation((output: string) => output)
@@ -168,7 +168,7 @@ describe("getEnvironmentDetails", () => {
 		expect(result).toContain("# Current Workspace Directory")
 		expect(result).toContain("Files")
 
-		expect(listFiles).toHaveBeenCalledWith(mockCwd, true, 50)
+		expect(listFiles).toHaveBeenCalledWith(mockCwd, true, 50, false, true, 1)
 
 		expect(formatResponse.formatFilesList).toHaveBeenCalledWith(
 			mockCwd,
@@ -176,6 +176,8 @@ describe("getEnvironmentDetails", () => {
 			false,
 			mockCline.rooIgnoreController,
 			false,
+			undefined,
+			new Set(),
 		)
 	})
 

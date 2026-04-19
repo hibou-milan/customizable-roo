@@ -202,6 +202,18 @@ export const globalSettingsSchema = z.object({
 	 * @default false
 	 */
 	followSymlinks: z.boolean().optional(),
+	/**
+	 * Whether to show symlinked directory entries (with `@` suffix) in file listings.
+	 * When false (default), symlinks are hidden unless `followSymlinks` is true.
+	 * @default false
+	 */
+	showSymlinks: z.boolean().optional(),
+	/**
+	 * How many levels deep to traverse symlinked directories in environment details.
+	 * 0 = show symlink entry only (no traversal); 1 = show one level of contents (default).
+	 * @default 1
+	 */
+	symlinkEnvDepth: z.number().int().min(0).max(10).optional(),
 	maxImageFileSize: z.number().optional(),
 	maxTotalImageSize: z.number().optional(),
 

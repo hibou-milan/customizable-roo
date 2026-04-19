@@ -767,6 +767,14 @@
 			"label": "Enable subfolder rules",
 			"description": "Recursively discover and load .roo/rules and AGENTS.md files from subdirectories. Useful for monorepos with per-package rules."
 		},
+		"showSymlinks": {
+			"label": "Show symbolic links in file listings",
+			"description": "When enabled, symbolic links to directories are shown with an @ suffix (e.g. linked-repo@/) in file listings. When disabled, symlinks are hidden unless 'Follow symbolic links' is also enabled."
+		},
+		"symlinkEnvDepth": {
+			"label": "Symlink traversal depth in workspace context",
+			"description": "How many levels deep to show contents of symlinked directories in the workspace file context. 0 = show symlink entry only; 1 = show one level of contents (default). Has no effect when 'Follow symbolic links' is enabled."
+		},
 		"followSymlinks": {
 			"label": "Follow symbolic links when listing files",
 			"description": "When enabled, symbolic links to directories are traversed during file listing and search. Circular symlinks are detected and skipped automatically."

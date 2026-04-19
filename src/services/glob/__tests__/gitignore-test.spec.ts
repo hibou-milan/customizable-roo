@@ -85,7 +85,7 @@ describe("list-files gitignore support", () => {
 		mockSpawn.mockReturnValue(mockProcess as any)
 
 		// Call listFiles in recursive mode
-		const [files, didHitLimit] = await listFiles(tempDir, true, 100)
+		const [files, , didHitLimit] = await listFiles(tempDir, true, 100)
 
 		// Verify that gitignored directories are not included
 		const directoriesInResult = files.filter((f) => f.endsWith("/"))
@@ -134,7 +134,7 @@ describe("list-files gitignore support", () => {
 		mockSpawn.mockReturnValue(mockProcess as any)
 
 		// Call listFiles in recursive mode
-		const [files, didHitLimit] = await listFiles(tempDir, true, 100)
+		const [files, , didHitLimit] = await listFiles(tempDir, true, 100)
 
 		// Verify that nested gitignored directories are not included
 		const directoriesInResult = files.filter((f) => f.endsWith("/"))

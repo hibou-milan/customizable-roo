@@ -226,6 +226,8 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		showRooIgnoredFiles: true, // Default to showing .rooignore'd files with lock symbol (current behavior).
 		enableSubfolderRules: false, // Default to disabled - must be enabled to load rules from subdirectories
 		followSymlinks: false, // Default to disabled - must be enabled to follow symlinked directories
+		showSymlinks: false, // Default to disabled - show symlinked directory entries with @ suffix
+		symlinkEnvDepth: 1, // Default depth for symlink traversal in environment details
 		renderContext: "sidebar",
 		maxReadFileLine: -1, // Default max line limit for read_file tool (-1 for default)
 		maxImageFileSize: 5, // Default max image file size in MB

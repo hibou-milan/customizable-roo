@@ -25,7 +25,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 
 	const clineProvider = cline.providerRef.deref()
 	const state = await clineProvider?.getState()
-	const { maxWorkspaceFiles = 200, followSymlinks = false } = state ?? {}
+	const { maxWorkspaceFiles = 200, followSymlinks = false, symlinkEnvDepth = 1 } = state ?? {}
 
 	// It could be useful for cline to know if the user went from one or no
 	// file to another between messages, so we always include this context.
@@ -241,7 +241,16 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 			if (maxFiles === 0) {
 				details += "(Workspace files context disabled. Use list_files to explore if needed.)"
 			} else {
-				const [files, didHitLimit] = await listFiles(cline.cwd, true, maxFiles, followSymlinks)
+				// In env-details, always show symlinks (regardless of showSymlinks setting)
+				// but use symlinkEnvDepth for bounded traversal instead of followSymlinks
+				const [files, symlinkSet, didHitLimit] = await listFiles(
+					cline.cwd,
+					true,
+					maxFiles,
+					followSymlinks,
+					true,
+					followSymlinks ? undefined : symlinkEnvDepth,
+				)
 				const { showRooIgnoredFiles = false } = state ?? {}
 
 				const result = formatResponse.formatFilesList(
@@ -250,6 +259,8 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 					didHitLimit,
 					cline.rooIgnoreController,
 					showRooIgnoredFiles,
+					undefined,
+					symlinkSet,
 				)
 
 				details += result
@@ -275,13 +286,22 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 				if (maxFiles === 0) {
 					details += "(Workspace files context disabled. Use list_files to explore if needed.)"
 				} else {
-					const [folderFiles, folderDidHitLimit] = await listFiles(folder, true, maxFiles, followSymlinks)
+					const [folderFiles, folderSymlinkSet, folderDidHitLimit] = await listFiles(
+						folder,
+						true,
+						maxFiles,
+						followSymlinks,
+						true,
+						followSymlinks ? undefined : symlinkEnvDepth,
+					)
 					details += formatResponse.formatFilesList(
 						folder,
 						folderFiles,
 						folderDidHitLimit,
 						cline.rooIgnoreController,
 						showRooIgnoredFiles,
+						undefined,
+						folderSymlinkSet,
 					)
 				}
 			}

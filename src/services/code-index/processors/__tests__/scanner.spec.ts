@@ -148,13 +148,13 @@ describe("DirectoryScanner", () => {
 
 		// Get and mock the listFiles function
 		const { listFiles } = await import("../../../glob/list-files")
-		vi.mocked(listFiles).mockResolvedValue([["test/file1.js", "test/file2.js"], false])
+		vi.mocked(listFiles).mockResolvedValue([["test/file1.js", "test/file2.js"], new Set<string>(), false])
 	})
 
 	describe("scanDirectory", () => {
 		it("should skip files larger than MAX_FILE_SIZE_BYTES", async () => {
 			const { listFiles } = await import("../../../glob/list-files")
-			vi.mocked(listFiles).mockResolvedValue([["test/file1.js"], false])
+			vi.mocked(listFiles).mockResolvedValue([["test/file1.js"], new Set<string>(), false])
 
 			// Create large file mock stats
 			const largeFileStats = {
@@ -179,7 +179,7 @@ describe("DirectoryScanner", () => {
 			)
 
 			const { listFiles } = await import("../../../glob/list-files")
-			vi.mocked(listFiles).mockResolvedValue([["test/file1.js"], false])
+			vi.mocked(listFiles).mockResolvedValue([["test/file1.js"], new Set<string>(), false])
 			const mockBlocks: any[] = [
 				{
 					file_path: "test/file1.js",
@@ -237,6 +237,7 @@ describe("DirectoryScanner", () => {
 					"src/.next/static/file3.js",
 					"normal/file4.js",
 				],
+				new Set<string>(),
 				false,
 			])
 
@@ -270,7 +271,11 @@ describe("DirectoryScanner", () => {
 			)
 
 			const { listFiles } = await import("../../../glob/list-files")
-			vi.mocked(listFiles).mockResolvedValue([["test/README.md", "test/app.js", "docs/guide.markdown"], false])
+			vi.mocked(listFiles).mockResolvedValue([
+				["test/README.md", "test/app.js", "docs/guide.markdown"],
+				new Set<string>(),
+				false,
+			])
 
 			const mockMarkdownBlocks: any[] = [
 				{
@@ -337,7 +342,7 @@ describe("DirectoryScanner", () => {
 
 		it("should generate unique point IDs for each block from the same file", async () => {
 			const { listFiles } = await import("../../../glob/list-files")
-			vi.mocked(listFiles).mockResolvedValue([["test/large-doc.md"], false])
+			vi.mocked(listFiles).mockResolvedValue([["test/large-doc.md"], new Set<string>(), false])
 
 			// Mock multiple blocks from the same file with different segmentHash values
 			const mockBlocks: any[] = [
@@ -397,7 +402,11 @@ describe("DirectoryScanner", () => {
 
 		it("should stop processing files when signal is aborted", async () => {
 			const { listFiles } = await import("../../../glob/list-files")
-			vi.mocked(listFiles).mockResolvedValue([["test/file1.js", "test/file2.js", "test/file3.js"], false])
+			vi.mocked(listFiles).mockResolvedValue([
+				["test/file1.js", "test/file2.js", "test/file3.js"],
+				new Set<string>(),
+				false,
+			])
 
 			// Create an already-aborted signal
 			const controller = new AbortController()
@@ -412,7 +421,7 @@ describe("DirectoryScanner", () => {
 
 		it("should stop processing batches when signal is aborted mid-scan", async () => {
 			const { listFiles } = await import("../../../glob/list-files")
-			vi.mocked(listFiles).mockResolvedValue([["test/file1.js", "test/file2.js"], false])
+			vi.mocked(listFiles).mockResolvedValue([["test/file1.js", "test/file2.js"], new Set<string>(), false])
 
 			const controller = new AbortController()
 
@@ -443,7 +452,7 @@ describe("DirectoryScanner", () => {
 
 		it("should not process deleted files when signal is aborted", async () => {
 			const { listFiles } = await import("../../../glob/list-files")
-			vi.mocked(listFiles).mockResolvedValue([[], false])
+			vi.mocked(listFiles).mockResolvedValue([[], new Set<string>(), false])
 
 			// Set up cached files that would normally be detected as deleted
 			;(mockCacheManager.getAllHashes as any).mockReturnValue({ "old/file.js": "old-hash" })

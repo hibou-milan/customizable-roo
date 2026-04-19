@@ -98,7 +98,7 @@ describe("listFiles limit handling for large projects", () => {
 
 		try {
 			const startTime = Date.now()
-			const [res, didHitLimit] = await listFiles("/test/large-project", true, limit)
+			const [res, , didHitLimit] = await listFiles("/test/large-project", true, limit)
 			const endTime = Date.now()
 
 			results = res
@@ -180,7 +180,7 @@ describe("listFiles limit handling for large projects", () => {
 
 		// Call listFiles with a small limit
 		const limit = 10
-		const [results, limitReached] = await listFiles("/test/project", true, limit)
+		const [results, , limitReached] = await listFiles("/test/project", true, limit)
 
 		// Verify results respect the limit
 		expect(results.length).toBeLessThanOrEqual(limit)
@@ -199,7 +199,7 @@ describe("listFiles limit handling for large projects", () => {
 
 	it("should handle zero limit gracefully", async () => {
 		// This test is already in the original spec but let's ensure it works with our changes
-		const [results, limitReached] = await listFiles("/test/path", true, 0)
+		const [results, , limitReached] = await listFiles("/test/path", true, 0)
 
 		expect(results).toEqual([])
 		expect(limitReached).toBe(false)
@@ -255,7 +255,7 @@ describe("listFiles limit handling for large projects", () => {
 		mockSpawn.mockReturnValue(mockProcess as any)
 
 		// Call with limit of 10
-		const [results, limitReached] = await listFiles("/test/project", true, 10)
+		const [results, , limitReached] = await listFiles("/test/project", true, 10)
 
 		// Should include both files and directories up to the limit
 		expect(results.length).toBe(10)

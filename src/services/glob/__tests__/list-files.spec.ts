@@ -26,7 +26,7 @@ describe("listFiles", () => {
 	it("should return empty array immediately when limit is 0", async () => {
 		const result = await listFiles("/test/path", true, 0)
 
-		expect(result).toEqual([[], false])
+		expect(result).toEqual([[], new Set(), false])
 	})
 })
 
@@ -218,7 +218,7 @@ describe("list-files symlink support", () => {
 		vi.mocked(fs.promises.access).mockRejectedValue(new Error("File not found"))
 
 		// Call listFiles with recursive=true and a small limit
-		const [results, limitReached] = await listFiles("/test/dir", true, 10)
+		const [results, , limitReached] = await listFiles("/test/dir", true, 10)
 
 		// Verify that we got results and hit the limit
 		expect(results.length).toBe(10)

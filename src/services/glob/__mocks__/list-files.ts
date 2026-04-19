@@ -33,19 +33,18 @@ const mockResolve = (dirPath: string): string => {
 export const listFiles = vi.fn((dirPath: string, _recursive: boolean, limit: number) => {
 	// Early return for limit of 0 - matches the actual implementation
 	if (limit === 0) {
-		return Promise.resolve([[], false])
+		return Promise.resolve([[], new Set<string>(), false])
 	}
 
 	// Special case: Root or home directories
 	// Prevents tests from trying to list all files in these directories
 	if (dirPath === "/" || dirPath === "/root" || dirPath === "/home/user") {
-		return Promise.resolve([[dirPath], false])
+		return Promise.resolve([[dirPath], new Set<string>(), false])
 	}
 
 	// Special case: Tree-sitter tests
-	// Some tests expect the second value to be a Set instead of a boolean
 	if (dirPath.includes("test/path")) {
-		return Promise.resolve([[], new Set()])
+		return Promise.resolve([[], new Set<string>(), false])
 	}
 
 	// Special case: For testing directories with actual content
@@ -55,9 +54,9 @@ export const listFiles = vi.fn((dirPath: string, _recursive: boolean, limit: num
 			`${mockResolve(dirPath)}/file2.js`,
 			`${mockResolve(dirPath)}/folder1/`,
 		]
-		return Promise.resolve([mockFiles, false])
+		return Promise.resolve([mockFiles, new Set<string>(), false])
 	}
 
 	// Default case: Return empty list for most tests
-	return Promise.resolve([[], false])
+	return Promise.resolve([[], new Set<string>(), false])
 })

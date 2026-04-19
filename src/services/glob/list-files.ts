@@ -29,24 +29,29 @@ interface ScanContext {
  * @param recursive - Whether to recursively list files in subdirectories
  * @param limit - Maximum number of files to return
  * @param followSymlinks - Whether to follow symbolic links to directories (default: false)
- * @returns Tuple of [file paths array, whether the limit was reached]
+ * @param showSymlinks - Whether to include symlinked directory entries in output (default: false)
+ * @param symlinkDepth - How many levels deep to traverse symlinks (0 = show entry only, undefined = unlimited when followSymlinks)
+ * @returns Tuple of [file paths array, set of symlinked directory paths in output, whether the limit was reached]
  */
 export async function listFiles(
 	dirPath: string,
 	recursive: boolean,
 	limit: number,
 	followSymlinks: boolean = false,
-): Promise<[string[], boolean]> {
+	showSymlinks: boolean = false,
+	symlinkDepth?: number,
+): Promise<[string[], Set<string>, boolean]> {
 	// Early return for limit of 0 - no need to scan anything
 	if (limit === 0) {
-		return [[], false]
+		return [[], new Set<string>(), false]
 	}
 
 	// Handle special directories
 	const specialResult = await handleSpecialDirectories(dirPath)
 
 	if (specialResult) {
-		return specialResult
+		const [paths, limitReached] = specialResult
+		return [paths, new Set<string>(), limitReached]
 	}
 
 	// Get ripgrep path
@@ -58,14 +63,16 @@ export async function listFiles(
 		const ignoreInstance = await createIgnoreInstance(dirPath)
 		// Calculate remaining limit for directories
 		const remainingLimit = Math.max(0, limit - files.length)
-		const directories = await listFilteredDirectories(
+		const [directories, symlinkSet] = await listFilteredDirectories(
 			dirPath,
 			false,
 			ignoreInstance,
 			remainingLimit,
 			followSymlinks,
+			showSymlinks,
+			symlinkDepth,
 		)
-		return formatAndCombineResults(files, directories, limit)
+		return formatAndCombineResults(files, directories, symlinkSet, limit)
 	}
 
 	// For recursive mode, use the original approach but ensure first-level directories are included
@@ -73,18 +80,32 @@ export async function listFiles(
 	const ignoreInstance = await createIgnoreInstance(dirPath)
 	// Calculate remaining limit for directories
 	const remainingLimit = Math.max(0, limit - files.length)
-	const directories = await listFilteredDirectories(dirPath, true, ignoreInstance, remainingLimit, followSymlinks)
+	const [directories, symlinkSet] = await listFilteredDirectories(
+		dirPath,
+		true,
+		ignoreInstance,
+		remainingLimit,
+		followSymlinks,
+		showSymlinks,
+		symlinkDepth,
+	)
 
 	// Combine and check if we hit the limits
-	const [results, limitReached] = formatAndCombineResults(files, directories, limit)
+	const [results, , limitReached] = formatAndCombineResults(files, directories, symlinkSet, limit)
 
 	// If we hit the limit, ensure all first-level directories are included
 	if (limitReached) {
-		const firstLevelDirs = await getFirstLevelDirectories(dirPath, ignoreInstance, followSymlinks)
-		return ensureFirstLevelDirectoriesIncluded(results, firstLevelDirs, limit)
+		const [firstLevelDirs] = await getFirstLevelDirectories(
+			dirPath,
+			ignoreInstance,
+			followSymlinks,
+			showSymlinks,
+			symlinkDepth,
+		)
+		return ensureFirstLevelDirectoriesIncluded(results, symlinkSet, firstLevelDirs, limit)
 	}
 
-	return [results, limitReached]
+	return [results, symlinkSet, limitReached]
 }
 
 /**
@@ -94,16 +115,38 @@ async function getFirstLevelDirectories(
 	dirPath: string,
 	ignoreInstance: ReturnType<typeof ignore>,
 	followSymlinks: boolean = false,
-): Promise<string[]> {
+	showSymlinks: boolean = false,
+	symlinkDepth?: number,
+): Promise<[string[], Set<string>]> {
 	const absolutePath = path.resolve(dirPath)
 	const directories: string[] = []
+	const symlinkSet = new Set<string>()
+	// Whether to include symlink entries in output
+	const includeSymlinks = showSymlinks || followSymlinks || (symlinkDepth !== undefined && symlinkDepth > 0)
 
 	try {
 		const entries = await fs.promises.readdir(absolutePath, { withFileTypes: true })
 
 		for (const entry of entries) {
-			if (entry.isDirectory() && (!entry.isSymbolicLink() || followSymlinks)) {
-				const fullDirPath = path.join(absolutePath, entry.name)
+			const isSymlink = entry.isSymbolicLink()
+			const isDir = entry.isDirectory()
+
+			// A symlinked directory: entry.isSymbolicLink() is true and the target is a directory
+			// With withFileTypes, entry.isDirectory() returns true for symlinks pointing to dirs on most platforms
+			// We need to check lstat to distinguish
+			const fullDirPath = path.join(absolutePath, entry.name)
+			let isSymlinkToDir = false
+			if (isSymlink) {
+				try {
+					const stat = await fs.promises.stat(fullDirPath)
+					isSymlinkToDir = stat.isDirectory()
+				} catch {
+					// broken symlink — skip
+					continue
+				}
+			}
+
+			if ((isDir && !isSymlink) || (isSymlink && isSymlinkToDir && includeSymlinks)) {
 				const context: ScanContext = {
 					isTargetDir: false,
 					insideExplicitHiddenTarget: false,
@@ -113,6 +156,9 @@ async function getFirstLevelDirectories(
 				if (shouldIncludeDirectory(entry.name, fullDirPath, context)) {
 					const formattedPath = fullDirPath.endsWith("/") ? fullDirPath : `${fullDirPath}/`
 					directories.push(formattedPath)
+					if (isSymlink && isSymlinkToDir) {
+						symlinkSet.add(formattedPath)
+					}
 				}
 			}
 		}
@@ -120,7 +166,7 @@ async function getFirstLevelDirectories(
 		console.warn(`Could not read directory ${absolutePath}: ${err}`)
 	}
 
-	return directories
+	return [directories, symlinkSet]
 }
 
 /**
@@ -128,9 +174,10 @@ async function getFirstLevelDirectories(
  */
 function ensureFirstLevelDirectoriesIncluded(
 	results: string[],
+	symlinkSet: Set<string>,
 	firstLevelDirs: string[],
 	limit: number,
-): [string[], boolean] {
+): [string[], Set<string>, boolean] {
 	// Create a set of existing paths for quick lookup
 	const existingPaths = new Set(results)
 
@@ -139,7 +186,7 @@ function ensureFirstLevelDirectoriesIncluded(
 
 	if (missingDirs.length === 0) {
 		// All first-level directories are already included
-		return [results, true]
+		return [results, symlinkSet, true]
 	}
 
 	// We need to make room for the missing directories
@@ -170,7 +217,7 @@ function ensureFirstLevelDirectoriesIncluded(
 	// Combine: existing first-level dirs + missing first-level dirs + other results
 	const finalResults = [...firstLevelResults, ...missingDirs, ...otherResults].slice(0, limit)
 
-	return [finalResults, true]
+	return [finalResults, symlinkSet, true]
 }
 
 /**
@@ -406,11 +453,16 @@ async function listFilteredDirectories(
 	ignoreInstance: ReturnType<typeof ignore>,
 	limit?: number,
 	followSymlinks: boolean = false,
-): Promise<string[]> {
+	showSymlinks: boolean = false,
+	symlinkDepth?: number,
+): Promise<[string[], Set<string>]> {
 	const absolutePath = path.resolve(dirPath)
 	const directories: string[] = []
+	const symlinkSet = new Set<string>()
 	let dirCount = 0
 	const effectiveLimit = limit ?? Number.MAX_SAFE_INTEGER
+	// Whether to include symlink entries in output (even if not traversing)
+	const includeSymlinks = showSymlinks || followSymlinks || (symlinkDepth !== undefined && symlinkDepth > 0)
 
 	// For environment details generation, we don't want to treat the root as a "target"
 	// if we're doing a general recursive scan, as this would include hidden directories
@@ -428,14 +480,14 @@ async function listFilteredDirectories(
 	// Track visited real paths to detect cycles when following symlinks
 	const visitedRealPaths = new Set<string>()
 
-	async function scanDirectory(currentPath: string, context: ScanContext): Promise<boolean> {
+	async function scanDirectory(currentPath: string, context: ScanContext, currentDepth: number): Promise<boolean> {
 		// Check if we've reached the limit
 		if (dirCount >= effectiveLimit) {
 			return true // Signal that limit was reached
 		}
 
-		// Detect cycles when following symlinks
-		if (followSymlinks) {
+		// Detect cycles when following symlinks or doing bounded traversal
+		if (followSymlinks || (symlinkDepth !== undefined && symlinkDepth > 0)) {
 			let realPath: string
 			try {
 				realPath = await fs.promises.realpath(currentPath)
@@ -452,77 +504,103 @@ async function listFilteredDirectories(
 			// List all entries in the current directory
 			const entries = await fs.promises.readdir(currentPath, { withFileTypes: true })
 
-			// Filter for directories only, excluding symbolic links to prevent circular traversal
-			// (unless followSymlinks is enabled)
 			for (const entry of entries) {
 				// Check limit before processing each directory
 				if (dirCount >= effectiveLimit) {
 					return true
 				}
 
-				if (entry.isDirectory() && (!entry.isSymbolicLink() || followSymlinks)) {
-					const dirName = entry.name
-					const fullDirPath = path.join(currentPath, dirName)
+				const isSymlink = entry.isSymbolicLink()
+				const isDir = entry.isDirectory()
+				const dirName = entry.name
+				const fullDirPath = path.join(currentPath, dirName)
 
-					// Create context for subdirectory checks
-					// Subdirectories found during scanning are never target directories themselves
-					const subdirContext: ScanContext = {
-						...context,
-						isTargetDir: false,
+				// Resolve symlink target type
+				let isSymlinkToDir = false
+				if (isSymlink) {
+					try {
+						const stat = await fs.promises.stat(fullDirPath)
+						isSymlinkToDir = stat.isDirectory()
+					} catch {
+						// broken symlink — skip
+						continue
 					}
+				}
 
-					// Check if this directory should be included
-					if (shouldIncludeDirectory(dirName, fullDirPath, subdirContext)) {
-						// Add the directory to our results (with trailing slash)
-						// fullDirPath is already absolute since it's built with path.join from absolutePath
+				// Determine if this entry is a real dir or a symlink-to-dir we should handle
+				const isRealDir = isDir && !isSymlink
+				const isSymlinkDir = isSymlink && isSymlinkToDir
+
+				if (!isRealDir && !isSymlinkDir) {
+					continue
+				}
+
+				// Create context for subdirectory checks
+				const subdirContext: ScanContext = {
+					...context,
+					isTargetDir: false,
+				}
+
+				// Check if this directory should be included
+				if (shouldIncludeDirectory(dirName, fullDirPath, subdirContext)) {
+					// For symlinked dirs: only include in output if includeSymlinks is true
+					if (isSymlinkDir && !includeSymlinks) {
+						// Still need to check recursion below for followSymlinks case
+					} else {
 						const formattedPath = fullDirPath.endsWith("/") ? fullDirPath : `${fullDirPath}/`
 						directories.push(formattedPath)
 						dirCount++
+						if (isSymlinkDir) {
+							symlinkSet.add(formattedPath)
+						}
 
 						// Check if we've reached the limit after adding
 						if (dirCount >= effectiveLimit) {
 							return true
 						}
 					}
+				}
 
-					// If recursive mode and not a ignored directory, scan subdirectories
-					// Don't recurse into hidden directories unless they are the explicit target
-					// or we're already inside an explicitly targeted hidden directory
-					const isHiddenDir = dirName.startsWith(".")
+				// Determine whether to recurse into this directory
+				const isHiddenDir = dirName.startsWith(".")
 
-					// Use the same logic as shouldIncludeDirectory for recursion decisions
-					// When inside an explicitly targeted hidden directory, only block critical directories
-					let shouldRecurseIntoDir = true
-					if (context.insideExplicitHiddenTarget) {
-						// Only apply the most critical ignore patterns when inside explicit hidden target
-						shouldRecurseIntoDir = !CRITICAL_IGNORE_PATTERNS.has(dirName)
-					} else {
-						shouldRecurseIntoDir = !isDirectoryExplicitlyIgnored(dirName)
+				let shouldRecurseIntoDir = true
+				if (context.insideExplicitHiddenTarget) {
+					shouldRecurseIntoDir = !CRITICAL_IGNORE_PATTERNS.has(dirName)
+				} else {
+					shouldRecurseIntoDir = !isDirectoryExplicitlyIgnored(dirName)
+				}
+
+				// For symlinked dirs: traverse only when followSymlinks (unlimited) or symlinkDepth > currentDepth
+				const canTraverseSymlink =
+					isSymlinkDir && (followSymlinks || (symlinkDepth !== undefined && currentDepth < symlinkDepth))
+
+				const shouldRecurse =
+					recursive &&
+					shouldRecurseIntoDir &&
+					!(
+						isHiddenDir &&
+						DIRS_TO_IGNORE.includes(".*") &&
+						!context.isTargetDir &&
+						!context.insideExplicitHiddenTarget
+					) &&
+					(isRealDir || canTraverseSymlink)
+
+				if (shouldRecurse) {
+					const newInsideExplicitHiddenTarget =
+						context.insideExplicitHiddenTarget || (isHiddenDir && context.isTargetDir)
+					const newContext: ScanContext = {
+						...context,
+						isTargetDir: false,
+						insideExplicitHiddenTarget: newInsideExplicitHiddenTarget,
 					}
-
-					const shouldRecurse =
-						recursive &&
-						shouldRecurseIntoDir &&
-						!(
-							isHiddenDir &&
-							DIRS_TO_IGNORE.includes(".*") &&
-							!context.isTargetDir &&
-							!context.insideExplicitHiddenTarget
-						)
-					if (shouldRecurse) {
-						// If we're entering a hidden directory that's the target, or we're already inside one,
-						// mark that we're inside an explicitly targeted hidden directory
-						const newInsideExplicitHiddenTarget =
-							context.insideExplicitHiddenTarget || (isHiddenDir && context.isTargetDir)
-						const newContext: ScanContext = {
-							...context,
-							isTargetDir: false,
-							insideExplicitHiddenTarget: newInsideExplicitHiddenTarget,
-						}
-						const limitReached = await scanDirectory(fullDirPath, newContext)
-						if (limitReached) {
-							return true
-						}
+					const limitReached = await scanDirectory(
+						fullDirPath,
+						newContext,
+						isSymlinkDir ? currentDepth + 1 : currentDepth,
+					)
+					if (limitReached) {
+						return true
 					}
 				}
 			}
@@ -535,9 +613,9 @@ async function listFilteredDirectories(
 	}
 
 	// Start scanning from the root directory
-	await scanDirectory(absolutePath, initialContext)
+	await scanDirectory(absolutePath, initialContext, 0)
 
-	return directories
+	return [directories, symlinkSet]
 }
 
 /**
@@ -656,7 +734,12 @@ function isDirectoryExplicitlyIgnored(dirName: string): boolean {
 /**
  * Combine file and directory results and format them properly
  */
-function formatAndCombineResults(files: string[], directories: string[], limit: number): [string[], boolean] {
+function formatAndCombineResults(
+	files: string[],
+	directories: string[],
+	symlinkSet: Set<string>,
+	limit: number,
+): [string[], Set<string>, boolean] {
 	// Combine file paths with directory paths
 	const allPaths = [...directories, ...files]
 
@@ -675,7 +758,10 @@ function formatAndCombineResults(files: string[], directories: string[], limit: 
 	})
 
 	const trimmedPaths = uniquePaths.slice(0, limit)
-	return [trimmedPaths, trimmedPaths.length >= limit]
+	// Filter symlinkSet to only include paths that made it into the trimmed output
+	const trimmedSet = new Set(trimmedPaths)
+	const filteredSymlinkSet = new Set<string>([...symlinkSet].filter((p) => trimmedSet.has(p)))
+	return [trimmedPaths, filteredSymlinkSet, trimmedPaths.length >= limit]
 }
 
 /**

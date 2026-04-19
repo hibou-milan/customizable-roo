@@ -464,6 +464,9 @@ describe("ContextManagementSettings", () => {
 			expect(screen.getByTestId("open-tabs-limit-slider")).toBeInTheDocument()
 			expect(screen.getByTestId("workspace-files-limit-slider")).toBeInTheDocument()
 			expect(screen.getByTestId("show-rooignored-files-checkbox")).toBeInTheDocument()
+			expect(screen.getByTestId("show-symlinks-checkbox")).toBeInTheDocument()
+			expect(screen.getByTestId("symlink-env-depth-slider")).toBeInTheDocument()
+			expect(screen.getByTestId("follow-symlinks-checkbox")).toBeInTheDocument()
 		})
 	})
 

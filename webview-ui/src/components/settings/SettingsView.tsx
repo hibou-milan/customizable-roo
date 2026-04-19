@@ -190,6 +190,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		showRooIgnoredFiles,
 		enableSubfolderRules,
 		followSymlinks,
+		showSymlinks,
+		symlinkEnvDepth,
 		maxImageFileSize,
 		maxTotalImageSize,
 		customSupportPrompts,
@@ -408,6 +410,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					showRooIgnoredFiles: showRooIgnoredFiles ?? true,
 					enableSubfolderRules: enableSubfolderRules ?? false,
 					followSymlinks: followSymlinks ?? false,
+					showSymlinks: showSymlinks ?? false,
+					symlinkEnvDepth: symlinkEnvDepth ?? 1,
 					maxImageFileSize: maxImageFileSize ?? 5,
 					maxTotalImageSize: maxTotalImageSize ?? 20,
 					includeDiagnosticMessages:
@@ -844,6 +848,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								showRooIgnoredFiles={showRooIgnoredFiles}
 								enableSubfolderRules={enableSubfolderRules}
 								followSymlinks={followSymlinks}
+								showSymlinks={showSymlinks}
+								symlinkEnvDepth={symlinkEnvDepth}
 								maxImageFileSize={maxImageFileSize}
 								maxTotalImageSize={maxTotalImageSize}
 								profileThresholds={profileThresholds}

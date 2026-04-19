@@ -78,7 +78,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 		const scanWorkspace = getWorkspacePathForContext(directoryPath)
 
 		// Get all files recursively (handles .gitignore automatically)
-		const [allPaths, _] = await listFiles(directoryPath, true, MAX_LIST_FILES_LIMIT_CODE_INDEX)
+		const [allPaths] = await listFiles(directoryPath, true, MAX_LIST_FILES_LIMIT_CODE_INDEX)
 
 		// Filter out directories (marked with trailing '/')
 		const filePaths = allPaths.filter((p) => !p.endsWith("/"))

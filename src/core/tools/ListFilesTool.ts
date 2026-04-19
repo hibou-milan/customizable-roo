@@ -37,8 +37,15 @@ export class ListFilesTool extends BaseTool<"list_files"> {
 			const absolutePath = path.resolve(task.cwd, relDirPath)
 			const isOutsideWorkspace = isPathOutsideWorkspace(absolutePath)
 
-			const [files, didHitLimit] = await listFiles(absolutePath, recursive || false, 200)
-			const { showRooIgnoredFiles = false } = (await task.providerRef.deref()?.getState()) ?? {}
+			const state = await task.providerRef.deref()?.getState()
+			const { showRooIgnoredFiles = false, followSymlinks = false, showSymlinks = false } = state ?? {}
+			const [files, symlinkSet, didHitLimit] = await listFiles(
+				absolutePath,
+				recursive || false,
+				200,
+				followSymlinks,
+				showSymlinks,
+			)
 
 			const result = formatResponse.formatFilesList(
 				absolutePath,
@@ -47,6 +54,7 @@ export class ListFilesTool extends BaseTool<"list_files"> {
 				task.rooIgnoreController,
 				showRooIgnoredFiles,
 				task.rooProtectedController,
+				symlinkSet,
 			)
 
 			const sharedMessageProps: ClineSayTool = {

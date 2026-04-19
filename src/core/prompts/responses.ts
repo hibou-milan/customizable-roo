@@ -121,12 +121,19 @@ Otherwise, if you have not completed the task and do not need additional informa
 		rooIgnoreController: RooIgnoreController | undefined,
 		showRooIgnoredFiles: boolean,
 		rooProtectedController?: RooProtectedController,
+		symlinkPaths?: Set<string>,
 	): string => {
 		const sorted = files
 			.map((file) => {
 				// convert absolute path to relative path
 				const relativePath = path.relative(absolutePath, file).toPosix()
-				return file.endsWith("/") ? relativePath + "/" : relativePath
+				const isDir = file.endsWith("/")
+				// Check if this directory entry is a symlink (absolute path without trailing slash)
+				const isSymlink = isDir && symlinkPaths?.has(file.endsWith("/") ? file.slice(0, -1) : file)
+				if (isSymlink) {
+					return relativePath + "@/"
+				}
+				return isDir ? relativePath + "/" : relativePath
 			})
 			// Sort so files are listed under their respective directories to make it clear what files are children of what directories. Since we build file list top down, even if file list is truncated it will show directories that cline can then explore further.
 			.sort((a, b) => {

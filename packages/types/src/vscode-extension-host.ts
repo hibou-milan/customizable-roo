@@ -329,6 +329,8 @@ export type ExtensionState = Pick<
 	showRooIgnoredFiles: boolean // Whether to show .rooignore'd files in listings
 	enableSubfolderRules: boolean // Whether to load rules from subdirectories
 	followSymlinks: boolean // Whether to follow symlinked directories during file listing
+	showSymlinks: boolean // Whether to show symlinked directory entries (with @ suffix) in file listings
+	symlinkEnvDepth: number // How many levels deep to traverse symlinks in environment details (0 = entry only)
 	maxReadFileLine?: number // Maximum line limit for read_file tool (-1 for default)
 	maxImageFileSize: number // Maximum size of image files to process in MB
 	maxTotalImageSize: number // Maximum total size for all images in a single read operation in MB

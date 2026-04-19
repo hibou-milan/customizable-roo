@@ -34,6 +34,8 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	showRooIgnoredFiles?: boolean
 	enableSubfolderRules?: boolean
 	followSymlinks?: boolean
+	showSymlinks?: boolean
+	symlinkEnvDepth?: number
 	maxImageFileSize?: number
 	maxTotalImageSize?: number
 	profileThresholds?: Record<string, number>
@@ -53,6 +55,8 @@ type ContextManagementSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "showRooIgnoredFiles"
 		| "enableSubfolderRules"
 		| "followSymlinks"
+		| "showSymlinks"
+		| "symlinkEnvDepth"
 		| "maxImageFileSize"
 		| "maxTotalImageSize"
 		| "profileThresholds"
@@ -74,6 +78,8 @@ export const ContextManagementSettings = ({
 	showRooIgnoredFiles,
 	enableSubfolderRules,
 	followSymlinks,
+	showSymlinks,
+	symlinkEnvDepth,
 	setCachedStateField,
 	maxImageFileSize,
 	maxTotalImageSize,
@@ -246,6 +252,46 @@ export const ContextManagementSettings = ({
 					</VSCodeCheckbox>
 					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
 						{t("settings:contextManagement.enableSubfolderRules.description")}
+					</div>
+				</SearchableSetting>
+
+				<SearchableSetting
+					settingId="context-show-symlinks"
+					section="contextManagement"
+					label={t("settings:contextManagement.showSymlinks.label")}>
+					<VSCodeCheckbox
+						checked={showSymlinks ?? false}
+						onChange={(e: any) => setCachedStateField("showSymlinks", e.target.checked)}
+						data-testid="show-symlinks-checkbox">
+						<label className="block font-medium mb-1">
+							{t("settings:contextManagement.showSymlinks.label")}
+						</label>
+					</VSCodeCheckbox>
+					<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
+						{t("settings:contextManagement.showSymlinks.description")}
+					</div>
+				</SearchableSetting>
+
+				<SearchableSetting
+					settingId="context-symlink-env-depth"
+					section="contextManagement"
+					label={t("settings:contextManagement.symlinkEnvDepth.label")}>
+					<div className="flex flex-col gap-2">
+						<span className="font-medium">{t("settings:contextManagement.symlinkEnvDepth.label")}</span>
+						<div className="flex items-center gap-2">
+							<Slider
+								min={0}
+								max={10}
+								step={1}
+								value={[symlinkEnvDepth ?? 1]}
+								onValueChange={([value]) => setCachedStateField("symlinkEnvDepth", value)}
+								data-testid="symlink-env-depth-slider"
+							/>
+							<span className="w-8 text-right">{symlinkEnvDepth ?? 1}</span>
+						</div>
+						<div className="text-vscode-descriptionForeground text-sm mt-1 mb-3">
+							{t("settings:contextManagement.symlinkEnvDepth.description")}
+						</div>
 					</div>
 				</SearchableSetting>
 

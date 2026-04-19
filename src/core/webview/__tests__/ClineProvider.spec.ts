@@ -554,6 +554,8 @@ describe("ClineProvider", () => {
 			taskSyncEnabled: false,
 			checkpointTimeout: DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 			followSymlinks: false,
+			showSymlinks: false,
+			symlinkEnvDepth: 1,
 		}
 
 		const message: ExtensionMessage = {
