@@ -80,6 +80,8 @@ async function generatePrompt(
 	// Tool calling is native-only.
 	const effectiveProtocol = "native"
 
+	const sec = settings?.sections ?? {}
+
 	const [modesSection, skillsSection] = await Promise.all([
 		getModesSection(context, mode), // pass current mode slug for modesExcluded filtering
 		// When roleInSystemPrompt=false, omit skills from system prompt so it stays constant
@@ -94,8 +96,6 @@ async function generatePrompt(
 	// Compute additional workspace folders (all folders except the primary cwd)
 	const allFolders = vscode.workspace.workspaceFolders?.map((f) => f.uri.fsPath) ?? []
 	const additionalWorkspaceFolders = allFolders.filter((f) => !arePathsEqual(f, cwd))
-
-	const sec = settings?.sections ?? {}
 
 	// Role content
 	let roleContent: string
