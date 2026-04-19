@@ -18,6 +18,7 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 		experiments,
 		language,
 		enableSubfolderRules,
+		systemPromptSections,
 	} = await provider.getState()
 
 	const diffStrategy = new MultiSearchReplaceDiffStrategy()
@@ -60,6 +61,7 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 				.getConfiguration(Package.name)
 				.get<boolean>("newTaskRequireTodos", false),
 			isStealthModel: modelInfo?.isStealthModel,
+			sections: systemPromptSections,
 		},
 		undefined, // todoList
 		undefined, // modelId

@@ -69,7 +69,7 @@ import { combineCommandSequences } from "../../shared/combineCommandSequences"
 import { t } from "../../i18n"
 import { getApiMetrics, hasTokenUsageChanged, hasToolUsageChanged } from "../../shared/getApiMetrics"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
-import { defaultModeSlug, getModeBySlug, getModeSelection } from "../../shared/modes"
+import { defaultModeSlug, getModeBySlug, getModeSelection, getToolsForMode } from "../../shared/modes"
 import { DiffStrategy, type ToolUse, type ToolParamName, toolParamNames } from "../../shared/tools"
 import { getModelMaxOutputTokens } from "../../shared/api"
 
@@ -142,8 +142,20 @@ const MAX_CONTEXT_WINDOW_RETRIES = 3 // Maximum retries for context window error
  * Builds a role/instructions injection block for conversation injection.
  * Used when roleInSystemPrompt=false to inject role context into the conversation.
  */
-export function buildRoleInjectionBlock(modeName: string, roleDefinition: string, customInstructions: string): string {
+export function buildRoleInjectionBlock(
+	modeName: string,
+	roleDefinition: string,
+	customInstructions: string,
+	allowedTools?: string[],
+): string {
 	const parts = [`====\n\n[ROLE AND INSTRUCTIONS]\n\nYou are now operating as: ${modeName}\n\n${roleDefinition}`]
+
+	if (allowedTools && allowedTools.length > 0) {
+		parts.push(
+			`====\n\nTOOL USE\n\nIn this mode, you may ONLY use the following tools:\n${allowedTools.map((t) => `- ${t}`).join("\n")}\n\nAttempting to use any other tool will result in an error.`,
+		)
+	}
+
 	if (customInstructions.trim()) {
 		parts.push(
 			`====\n\nUSER'S CUSTOM INSTRUCTIONS\n\nThe following additional instructions are provided by the user, and should be followed to the best of your ability.\n\n${customInstructions.trim()}`,
@@ -2011,10 +2023,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					customModePrompts?.[currentModeSlug],
 					customModes,
 				)
+				// Include allowed tools so the model knows which tools it can use in this mode
+				const allowedTools = currentModeConfig ? getToolsForMode(currentModeConfig.groups) : undefined
 				const roleBlock = buildRoleInjectionBlock(
 					currentModeConfig?.name ?? currentModeSlug,
 					roleDefinition,
 					baseInstructions,
+					allowedTools,
 				)
 				await this.addToApiConversationHistory({
 					role: "user",
@@ -4278,6 +4293,12 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		// Other providers (Anthropic, OpenAI, etc.) don't support this feature yet,
 		// so they continue to receive only the filtered tools for the current mode.
 		const supportsAllowedFunctionNames = apiConfiguration?.apiProvider === "gemini"
+		// When role is in conversation (roleInSystemPrompt=false), always send all tools to the API
+		// so the tools array stays constant across mode switches, preserving the prompt cache.
+		// Mode restrictions are enforced via the role injection block + validateToolUse server-side.
+		const roleInConversation =
+			state?.systemPromptSections?.roleEnabled !== false &&
+			state?.systemPromptSections?.roleInSystemPrompt === false
 
 		{
 			const provider = this.providerRef.deref()
@@ -4294,7 +4315,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				apiConfiguration,
 				disabledTools: state?.disabledTools,
 				modelInfo,
-				includeAllToolsWithRestrictions: supportsAllowedFunctionNames,
+				includeAllToolsWithRestrictions: supportsAllowedFunctionNames || roleInConversation,
 			})
 			allTools = toolsResult.tools
 			allowedFunctionNames = toolsResult.allowedFunctionNames

@@ -1445,6 +1445,61 @@ describe("ClineProvider", () => {
 				}),
 			)
 		})
+
+		test("passes systemPromptSections to SYSTEM_PROMPT when roleInSystemPrompt=false", async () => {
+			await provider.resolveWebviewView(mockWebviewView)
+
+			const { SYSTEM_PROMPT } = await import("../../prompts/system")
+			vi.mocked(SYSTEM_PROMPT).mockClear()
+
+			const sections = {
+				roleInSystemPrompt: false,
+				roleDisabledPlaceholder: "CUSTOM PLACEHOLDER TEXT",
+			}
+
+			vi.spyOn(provider, "getState").mockResolvedValue({
+				apiConfiguration: { apiProvider: "openrouter" as const },
+				mcpEnabled: false,
+				mode: "code" as const,
+				experiments: experimentDefault,
+				systemPromptSections: sections,
+			} as any)
+
+			const handler = getMessageHandler()
+			await handler({ type: "getSystemPrompt", mode: "code" })
+
+			// Verify SYSTEM_PROMPT was called and the settings argument (13th) contains sections
+			expect(vi.mocked(SYSTEM_PROMPT)).toHaveBeenCalled()
+			const calls = vi.mocked(SYSTEM_PROMPT).mock.calls
+			const lastCall = calls[calls.length - 1]
+			// The 13th argument (index 12) is the settings object
+			expect(lastCall[12]).toMatchObject({ sections })
+		})
+
+		test("passes systemPromptSections=undefined to SYSTEM_PROMPT when not set in state", async () => {
+			await provider.resolveWebviewView(mockWebviewView)
+
+			const { SYSTEM_PROMPT } = await import("../../prompts/system")
+			vi.mocked(SYSTEM_PROMPT).mockClear()
+
+			vi.spyOn(provider, "getState").mockResolvedValue({
+				apiConfiguration: { apiProvider: "openrouter" as const },
+				mcpEnabled: false,
+				mode: "code" as const,
+				experiments: experimentDefault,
+				// no systemPromptSections
+			} as any)
+
+			const handler = getMessageHandler()
+			await handler({ type: "getSystemPrompt", mode: "code" })
+
+			// Verify SYSTEM_PROMPT was called and the settings argument (13th) has sections: undefined
+			expect(vi.mocked(SYSTEM_PROMPT)).toHaveBeenCalled()
+			const calls = vi.mocked(SYSTEM_PROMPT).mock.calls
+			const lastCall = calls[calls.length - 1]
+			// The 13th argument (index 12) is the settings object
+			expect(lastCall[12]).toHaveProperty("sections", undefined)
+		})
 	})
 
 	describe("handleModeSwitch", () => {

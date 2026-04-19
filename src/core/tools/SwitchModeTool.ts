@@ -2,7 +2,7 @@ import delay from "delay"
 
 import { Task, buildRoleInjectionBlock } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
-import { defaultModeSlug, getModeBySlug, getModeSelection } from "../../shared/modes"
+import { defaultModeSlug, getModeBySlug, getModeSelection, getToolsForMode } from "../../shared/modes"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
 
@@ -58,10 +58,11 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 			// Switch the mode using shared handler
 			await task.providerRef.deref()?.handleModeSwitch(mode_slug)
 
-			// Inject role/instructions change notification if role is not in system prompt
+			// Build role injection suffix if role is not in system prompt
 			const postSwitchState = await task.providerRef.deref()?.getState()
 			const postSwitchSections = postSwitchState?.systemPromptSections ?? {}
 
+			let roleInjectionSuffix = ""
 			if (postSwitchSections.roleEnabled !== false && postSwitchSections.roleInSystemPrompt === false) {
 				const { customModes, customModePrompts } = postSwitchState ?? {}
 				const newModeConfig = getModeBySlug(mode_slug, customModes)
@@ -70,20 +71,25 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 					customModePrompts?.[mode_slug],
 					customModes,
 				)
+				// Get allowed tools for the new mode to include in the injection block
+				const allowedTools = newModeConfig ? getToolsForMode(newModeConfig.groups) : undefined
 
-				const warningBlock =
-					`⚠️ [ROLE AND INSTRUCTIONS CHANGE]\n\n` +
+				roleInjectionSuffix =
+					`\n\n⚠️ [ROLE AND INSTRUCTIONS CHANGE]\n\n` +
 					`The previous role and instructions are now SUPERSEDED. ` +
 					`Disregard any prior [ROLE AND INSTRUCTIONS] sections.\n\n` +
-					buildRoleInjectionBlock(newModeConfig?.name ?? mode_slug, roleDefinition, baseInstructions)
-
-				await task.injectConversationMessage(warningBlock)
+					buildRoleInjectionBlock(
+						newModeConfig?.name ?? mode_slug,
+						roleDefinition,
+						baseInstructions,
+						allowedTools,
+					)
 			}
 
 			pushToolResult(
 				`Successfully switched from ${getModeBySlug(currentMode)?.name ?? currentMode} mode to ${
 					targetMode.name
-				} mode${reason ? ` because: ${reason}` : ""}.`,
+				} mode${reason ? ` because: ${reason}` : ""}.${roleInjectionSuffix}`,
 			)
 
 			await delay(500) // Delay to allow mode change to take effect before next tool is executed

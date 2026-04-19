@@ -63,4 +63,46 @@ describe("buildRoleInjectionBlock", () => {
 		const result = buildRoleInjectionBlock("Code", roleDefinition, customInstructions)
 		expect(result.indexOf(roleDefinition)).toBeLessThan(result.indexOf(customInstructions))
 	})
+
+	it("includes allowed tools section when allowedTools provided", () => {
+		const result = buildRoleInjectionBlock("Code", "You are a code assistant.", "", ["read_file", "write_to_file"])
+		expect(result).toContain("TOOL USE")
+		expect(result).toContain("- read_file")
+		expect(result).toContain("- write_to_file")
+		expect(result).toContain("you may ONLY use the following tools")
+	})
+
+	it("omits tool use section when allowedTools is undefined", () => {
+		const result = buildRoleInjectionBlock("Code", "You are a code assistant.", "")
+		expect(result).not.toContain("TOOL USE")
+		expect(result).not.toContain("you may ONLY use the following tools")
+	})
+
+	it("omits tool use section when allowedTools is empty array", () => {
+		const result = buildRoleInjectionBlock("Code", "You are a code assistant.", "", [])
+		expect(result).not.toContain("TOOL USE")
+	})
+
+	it("places tool use section between role definition and custom instructions", () => {
+		const result = buildRoleInjectionBlock("Code", "Role text.", "Custom instructions.", ["read_file"])
+		const roleIdx = result.indexOf("Role text.")
+		const toolIdx = result.indexOf("TOOL USE")
+		const customIdx = result.indexOf("Custom instructions.")
+		expect(roleIdx).toBeLessThan(toolIdx)
+		expect(toolIdx).toBeLessThan(customIdx)
+	})
+
+	it("returns two blocks when allowedTools provided but no custom instructions", () => {
+		const result = buildRoleInjectionBlock("Code", "Role text.", "", ["read_file"])
+		// Should have two ==== separator blocks: role + tool use
+		const separatorCount = (result.match(/====/g) || []).length
+		expect(separatorCount).toBe(2)
+	})
+
+	it("returns three blocks when allowedTools and custom instructions both provided", () => {
+		const result = buildRoleInjectionBlock("Code", "Role text.", "Custom instructions.", ["read_file"])
+		// Should have three ==== separator blocks: role + tool use + custom instructions
+		const separatorCount = (result.match(/====/g) || []).length
+		expect(separatorCount).toBe(3)
+	})
 })
