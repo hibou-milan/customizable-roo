@@ -105,4 +105,59 @@ describe("buildRoleInjectionBlock", () => {
 		const separatorCount = (result.match(/====/g) || []).length
 		expect(separatorCount).toBe(3)
 	})
+
+	// ─── skillsSection parameter ────────────────────────────────────────────────
+
+	it("includes skills section when skillsSection is provided", () => {
+		const skillsSection =
+			"====\n\nAVAILABLE SKILLS\n\n<available_skills>\n  <skill><name>my-skill</name></skill>\n</available_skills>"
+		const result = buildRoleInjectionBlock("Code", "Role text.", "", undefined, skillsSection)
+		expect(result).toContain("AVAILABLE SKILLS")
+		expect(result).toContain("my-skill")
+	})
+
+	it("omits skills section when skillsSection is undefined", () => {
+		const result = buildRoleInjectionBlock("Code", "Role text.", "")
+		expect(result).not.toContain("AVAILABLE SKILLS")
+	})
+
+	it("omits skills section when skillsSection is empty string", () => {
+		const result = buildRoleInjectionBlock("Code", "Role text.", "", undefined, "")
+		expect(result).not.toContain("AVAILABLE SKILLS")
+	})
+
+	it("omits skills section when skillsSection is whitespace-only", () => {
+		const result = buildRoleInjectionBlock("Code", "Role text.", "", undefined, "   \n  ")
+		expect(result).not.toContain("AVAILABLE SKILLS")
+	})
+
+	it("places skills section after custom instructions", () => {
+		const skillsSection = "====\n\nAVAILABLE SKILLS\n\nskill content"
+		const result = buildRoleInjectionBlock("Code", "Role text.", "Custom instructions.", undefined, skillsSection)
+		const customIdx = result.indexOf("Custom instructions.")
+		const skillsIdx = result.indexOf("AVAILABLE SKILLS")
+		expect(customIdx).toBeLessThan(skillsIdx)
+	})
+
+	it("places skills section after tool use when no custom instructions", () => {
+		const skillsSection = "====\n\nAVAILABLE SKILLS\n\nskill content"
+		const result = buildRoleInjectionBlock("Code", "Role text.", "", ["read_file"], skillsSection)
+		const toolIdx = result.indexOf("TOOL USE")
+		const skillsIdx = result.indexOf("AVAILABLE SKILLS")
+		expect(toolIdx).toBeLessThan(skillsIdx)
+	})
+
+	it("returns four blocks when allowedTools, custom instructions, and skillsSection all provided", () => {
+		const skillsSection = "====\n\nAVAILABLE SKILLS\n\nskill content"
+		const result = buildRoleInjectionBlock(
+			"Code",
+			"Role text.",
+			"Custom instructions.",
+			["read_file"],
+			skillsSection,
+		)
+		// role + tool use + custom instructions + skills = 4 ==== blocks
+		const separatorCount = (result.match(/====/g) || []).length
+		expect(separatorCount).toBe(4)
+	})
 })

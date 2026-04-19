@@ -94,6 +94,7 @@ import { getTaskDirectoryPath } from "../../utils/storage"
 // prompts
 import { formatResponse } from "../prompts/responses"
 import { SYSTEM_PROMPT } from "../prompts/system"
+import { buildSkillsSectionContent } from "../prompts/sections"
 import { buildNativeToolsArrayWithRestrictions } from "./build-tools"
 
 // core modules
@@ -147,6 +148,7 @@ export function buildRoleInjectionBlock(
 	roleDefinition: string,
 	customInstructions: string,
 	allowedTools?: string[],
+	skillsSection?: string,
 ): string {
 	const parts = [`====\n\n[ROLE AND INSTRUCTIONS]\n\nYou are now operating as: ${modeName}\n\n${roleDefinition}`]
 
@@ -161,6 +163,11 @@ export function buildRoleInjectionBlock(
 			`====\n\nUSER'S CUSTOM INSTRUCTIONS\n\nThe following additional instructions are provided by the user, and should be followed to the best of your ability.\n\n${customInstructions.trim()}`,
 		)
 	}
+
+	if (skillsSection?.trim()) {
+		parts.push(skillsSection.trim())
+	}
+
 	return parts.join("\n\n")
 }
 
@@ -2025,11 +2032,19 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				)
 				// Include allowed tools so the model knows which tools it can use in this mode
 				const allowedTools = currentModeConfig ? getToolsForMode(currentModeConfig.groups) : undefined
+				// Include skills section so the model knows which skills are available in this mode
+				const skillsManager = this.providerRef.deref()?.getSkillsManager()
+				const modeSkills = skillsManager?.getSkillsForMode(currentModeSlug)
+				const skillsSectionText =
+					modeSkills && modeSkills.length > 0
+						? buildSkillsSectionContent(modeSkills, currentModeSlug)
+						: undefined
 				const roleBlock = buildRoleInjectionBlock(
 					currentModeConfig?.name ?? currentModeSlug,
 					roleDefinition,
 					baseInstructions,
 					allowedTools,
+					skillsSectionText,
 				)
 				await this.addToApiConversationHistory({
 					role: "user",

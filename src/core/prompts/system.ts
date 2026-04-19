@@ -82,7 +82,10 @@ async function generatePrompt(
 
 	const [modesSection, skillsSection] = await Promise.all([
 		getModesSection(context, mode), // pass current mode slug for modesExcluded filtering
-		getSkillsSection(skillsManager, mode as string),
+		// When roleInSystemPrompt=false, omit skills from system prompt so it stays constant
+		// across mode switches (preserving the prompt cache). Skills are injected into the
+		// conversation instead via buildRoleInjectionBlock.
+		getSkillsSection(skillsManager, mode as string, sec.roleInSystemPrompt === false),
 	])
 
 	// Tools catalog is not included in the system prompt.

@@ -3,6 +3,7 @@ import delay from "delay"
 import { Task, buildRoleInjectionBlock } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
 import { defaultModeSlug, getModeBySlug, getModeSelection, getToolsForMode } from "../../shared/modes"
+import { buildSkillsSectionContent } from "../prompts/sections"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
 
@@ -73,6 +74,11 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 				)
 				// Get allowed tools for the new mode to include in the injection block
 				const allowedTools = newModeConfig ? getToolsForMode(newModeConfig.groups) : undefined
+				// Get skills for the new mode to include in the injection block
+				const skillsManager = task.providerRef.deref()?.getSkillsManager()
+				const modeSkills = skillsManager?.getSkillsForMode(mode_slug)
+				const skillsSectionText =
+					modeSkills && modeSkills.length > 0 ? buildSkillsSectionContent(modeSkills, mode_slug) : undefined
 
 				roleInjectionSuffix =
 					`\n\n⚠️ [ROLE AND INSTRUCTIONS CHANGE]\n\n` +
@@ -83,6 +89,7 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 						roleDefinition,
 						baseInstructions,
 						allowedTools,
+						skillsSectionText,
 					)
 			}
 
