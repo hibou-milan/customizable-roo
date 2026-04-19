@@ -3,7 +3,7 @@ import delay from "delay"
 import { Task, buildRoleInjectionBlock } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
 import { defaultModeSlug, getModeBySlug, getModeSelection, getToolsForMode } from "../../shared/modes"
-import { buildSkillsSectionContent } from "../prompts/sections"
+import { buildSkillsSectionContent } from "../prompts/sections/skills"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
 

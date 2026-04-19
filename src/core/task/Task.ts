@@ -94,7 +94,7 @@ import { getTaskDirectoryPath } from "../../utils/storage"
 // prompts
 import { formatResponse } from "../prompts/responses"
 import { SYSTEM_PROMPT } from "../prompts/system"
-import { buildSkillsSectionContent } from "../prompts/sections"
+import { buildSkillsSectionContent } from "../prompts/sections/skills"
 import { buildNativeToolsArrayWithRestrictions } from "./build-tools"
 
 // core modules
