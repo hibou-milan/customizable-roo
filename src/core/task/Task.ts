@@ -69,7 +69,7 @@ import { combineCommandSequences } from "../../shared/combineCommandSequences"
 import { t } from "../../i18n"
 import { getApiMetrics, hasTokenUsageChanged, hasToolUsageChanged } from "../../shared/getApiMetrics"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
-import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
+import { defaultModeSlug, getModeBySlug, getModeSelection } from "../../shared/modes"
 import { DiffStrategy, type ToolUse, type ToolParamName, toolParamNames } from "../../shared/tools"
 import { getModelMaxOutputTokens } from "../../shared/api"
 
@@ -137,6 +137,20 @@ const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
 const DEFAULT_USAGE_COLLECTION_TIMEOUT_MS = 5000 // 5 seconds
 const FORCED_CONTEXT_REDUCTION_PERCENT = 75 // Keep 75% of context (remove 25%) on context window errors
 const MAX_CONTEXT_WINDOW_RETRIES = 3 // Maximum retries for context window errors
+
+/**
+ * Builds a role/instructions injection block for conversation injection.
+ * Used when roleInSystemPrompt=false to inject role context into the conversation.
+ */
+export function buildRoleInjectionBlock(modeName: string, roleDefinition: string, customInstructions: string): string {
+	const parts = [`====\n\n[ROLE AND INSTRUCTIONS]\n\nYou are now operating as: ${modeName}\n\n${roleDefinition}`]
+	if (customInstructions.trim()) {
+		parts.push(
+			`====\n\nUSER'S CUSTOM INSTRUCTIONS\n\nThe following additional instructions are provided by the user, and should be followed to the best of your ability.\n\n${customInstructions.trim()}`,
+		)
+	}
+	return parts.join("\n\n")
+}
 
 export interface TaskOptions extends CreateTaskOptions {
 	provider: ClineProvider
@@ -858,6 +872,17 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	private async getSavedApiConversationHistory(): Promise<ApiMessage[]> {
 		return readApiMessages({ taskId: this.taskId, globalStoragePath: this.globalStoragePath })
+	}
+
+	/**
+	 * Injects a message directly into the API conversation history without going through the UI.
+	 * Used for silent injections like role/instructions when roleInSystemPrompt=false.
+	 */
+	public async injectConversationMessage(text: string): Promise<void> {
+		await this.addToApiConversationHistory({
+			role: "user",
+			content: [{ type: "text", text }],
+		})
 	}
 
 	private async addToApiConversationHistory(message: Anthropic.MessageParam, reasoning?: string) {
@@ -1972,6 +1997,30 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			this.isInitialized = true
 
 			const imageBlocks: Anthropic.ImageBlockParam[] = formatResponse.imageBlocks(images)
+
+			// Inject role/instructions into conversation if not in system prompt
+			const taskState = await this.providerRef.deref()?.getState()
+			const taskSections = taskState?.systemPromptSections ?? {}
+
+			if (taskSections.roleEnabled !== false && taskSections.roleInSystemPrompt === false) {
+				const { mode, customModes, customModePrompts } = taskState ?? {}
+				const currentModeSlug = mode ?? defaultModeSlug
+				const currentModeConfig = getModeBySlug(currentModeSlug, customModes)
+				const { roleDefinition, baseInstructions } = getModeSelection(
+					currentModeSlug,
+					customModePrompts?.[currentModeSlug],
+					customModes,
+				)
+				const roleBlock = buildRoleInjectionBlock(
+					currentModeConfig?.name ?? currentModeSlug,
+					roleDefinition,
+					baseInstructions,
+				)
+				await this.addToApiConversationHistory({
+					role: "user",
+					content: [{ type: "text", text: roleBlock }],
+				})
+			}
 
 			// Task starting
 			await this.initiateTaskLoop([
@@ -3777,6 +3826,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			language,
 			apiConfiguration,
 			enableSubfolderRules,
+			systemPromptSections,
 		} = state ?? {}
 
 		return await (async () => {
@@ -3810,6 +3860,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						.getConfiguration(Package.name)
 						.get<boolean>("newTaskRequireTodos", false),
 					isStealthModel: modelInfo?.isStealthModel,
+					sections: systemPromptSections,
 				},
 				undefined, // todoList
 				this.api.getModel().id,

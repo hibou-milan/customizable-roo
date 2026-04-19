@@ -1,6 +1,14 @@
 import { McpHub } from "../../../services/mcp/McpHub"
 
-export function getCapabilitiesSection(cwd: string, mcpHub?: McpHub): string {
+export function getCapabilitiesSection(cwd: string, mcpHub?: McpHub, override?: string): string {
+	if (override?.trim()) {
+		return `====
+
+CAPABILITIES
+
+${override.trim()}`
+	}
+
 	return `====
 
 CAPABILITIES

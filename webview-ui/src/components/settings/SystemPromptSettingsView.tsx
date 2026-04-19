@@ -1,0 +1,235 @@
+import React from "react"
+import { VSCodeCheckbox, VSCodeTextArea } from "@vscode/webview-ui-toolkit/react"
+
+import type { SystemPromptSections } from "@roo-code/types"
+
+import { useAppTranslation } from "@src/i18n/TranslationContext"
+import { SectionHeader } from "./SectionHeader"
+import { Section } from "./Section"
+import { Button } from "@src/components/ui"
+
+interface SystemPromptSettingsViewProps {
+	systemPromptSections: SystemPromptSections
+	setSystemPromptSections: (val: SystemPromptSections) => void
+}
+
+interface SectionRowProps {
+	label: string
+	enabled: boolean
+	onToggle: (enabled: boolean) => void
+	overrideValue: string | undefined
+	onOverrideChange: (val: string) => void
+	onReset: () => void
+	overrideLabel: string
+	resetLabel: string
+	defaultPlaceholder: string
+	children?: React.ReactNode
+}
+
+const SectionRow: React.FC<SectionRowProps> = ({
+	label,
+	enabled,
+	onToggle,
+	overrideValue,
+	onOverrideChange,
+	onReset,
+	overrideLabel,
+	resetLabel,
+	defaultPlaceholder,
+	children,
+}) => {
+	return (
+		<div className="mb-4 pb-4 border-b border-vscode-input-border last:border-b-0">
+			<div className="flex items-center gap-2 mb-2">
+				<VSCodeCheckbox checked={enabled} onChange={(e) => onToggle((e.target as HTMLInputElement).checked)}>
+					<span className="font-medium">{label}</span>
+				</VSCodeCheckbox>
+			</div>
+			{enabled && (
+				<div className="ml-6">
+					{children}
+					<div className="text-xs text-vscode-descriptionForeground mb-1">{overrideLabel}</div>
+					<div className="flex gap-2 items-start">
+						<VSCodeTextArea
+							resize="vertical"
+							value={overrideValue ?? ""}
+							placeholder={defaultPlaceholder}
+							onChange={(e) => onOverrideChange((e.target as HTMLTextAreaElement).value)}
+							rows={3}
+							className="w-full"
+						/>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={onReset}
+							title={resetLabel}
+							className="flex-shrink-0 mt-0.5">
+							<span className="codicon codicon-discard"></span>
+						</Button>
+					</div>
+				</div>
+			)}
+		</div>
+	)
+}
+
+export const SystemPromptSettingsView: React.FC<SystemPromptSettingsViewProps> = ({
+	systemPromptSections,
+	setSystemPromptSections,
+}) => {
+	const { t } = useAppTranslation()
+
+	const update = (patch: Partial<SystemPromptSections>) => {
+		setSystemPromptSections({ ...systemPromptSections, ...patch })
+	}
+
+	const roleEnabled = systemPromptSections.roleEnabled !== false
+	const roleInSystemPrompt = systemPromptSections.roleInSystemPrompt !== false
+
+	return (
+		<div>
+			<SectionHeader>{t("settings:systemPrompt.title")}</SectionHeader>
+			<Section>
+				<div className="text-sm text-vscode-descriptionForeground mb-4">
+					{t("settings:systemPrompt.description")}
+				</div>
+
+				{/* Role & Custom Instructions */}
+				<div className="mb-4 pb-4 border-b border-vscode-input-border">
+					<div className="flex items-center gap-2 mb-2">
+						<VSCodeCheckbox
+							checked={roleEnabled}
+							onChange={(e) => update({ roleEnabled: (e.target as HTMLInputElement).checked })}>
+							<span className="font-medium">{t("settings:systemPrompt.roleSection")}</span>
+						</VSCodeCheckbox>
+					</div>
+					{roleEnabled && (
+						<div className="ml-6">
+							<div className="flex gap-4 mb-3">
+								<label className="flex items-center gap-2 cursor-pointer">
+									<input
+										type="radio"
+										name="roleLocation"
+										checked={roleInSystemPrompt}
+										onChange={() => update({ roleInSystemPrompt: true })}
+									/>
+									<span className="text-sm">{t("settings:systemPrompt.roleInSystemPrompt")}</span>
+								</label>
+								<label className="flex items-center gap-2 cursor-pointer">
+									<input
+										type="radio"
+										name="roleLocation"
+										checked={!roleInSystemPrompt}
+										onChange={() => update({ roleInSystemPrompt: false })}
+									/>
+									<span className="text-sm">{t("settings:systemPrompt.roleInConversation")}</span>
+								</label>
+							</div>
+							{!roleInSystemPrompt && (
+								<div>
+									<div className="text-xs text-vscode-descriptionForeground mb-1">
+										{t("settings:systemPrompt.rolePlaceholderLabel")}
+									</div>
+									<div className="flex gap-2 items-start">
+										<VSCodeTextArea
+											resize="vertical"
+											value={systemPromptSections.roleDisabledPlaceholder ?? ""}
+											placeholder="IMPORTANT: Pay close attention to role and instruction sections that will appear in the conversation..."
+											onChange={(e) =>
+												update({
+													roleDisabledPlaceholder: (e.target as HTMLTextAreaElement).value,
+												})
+											}
+											rows={3}
+											className="w-full"
+										/>
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() => update({ roleDisabledPlaceholder: undefined })}
+											title={t("settings:systemPrompt.rolePlaceholderReset")}
+											className="flex-shrink-0 mt-0.5">
+											<span className="codicon codicon-discard"></span>
+										</Button>
+									</div>
+								</div>
+							)}
+						</div>
+					)}
+				</div>
+
+				{/* Markdown Rules */}
+				<SectionRow
+					label={t("settings:systemPrompt.markdownRules")}
+					enabled={systemPromptSections.markdownRulesEnabled !== false}
+					onToggle={(enabled) => update({ markdownRulesEnabled: enabled })}
+					overrideValue={systemPromptSections.markdownRulesOverride}
+					onOverrideChange={(val) => update({ markdownRulesOverride: val || undefined })}
+					onReset={() => update({ markdownRulesOverride: undefined })}
+					overrideLabel={t("settings:systemPrompt.overrideLabel")}
+					resetLabel={t("settings:systemPrompt.resetToDefault")}
+					defaultPlaceholder="ALL responses MUST show ANY `language construct` OR filename reference as clickable..."
+				/>
+
+				{/* Tool Use */}
+				<SectionRow
+					label={t("settings:systemPrompt.toolUse")}
+					enabled={systemPromptSections.toolUseEnabled !== false}
+					onToggle={(enabled) => update({ toolUseEnabled: enabled })}
+					overrideValue={systemPromptSections.toolUseOverride}
+					onOverrideChange={(val) => update({ toolUseOverride: val || undefined })}
+					onReset={() => update({ toolUseOverride: undefined })}
+					overrideLabel={t("settings:systemPrompt.overrideLabel")}
+					resetLabel={t("settings:systemPrompt.resetToDefault")}
+					defaultPlaceholder="You have access to a set of tools that are executed upon the user's approval..."
+				/>
+
+				{/* Capabilities */}
+				<SectionRow
+					label={t("settings:systemPrompt.capabilities")}
+					enabled={systemPromptSections.capabilitiesEnabled !== false}
+					onToggle={(enabled) => update({ capabilitiesEnabled: enabled })}
+					overrideValue={systemPromptSections.capabilitiesOverride}
+					onOverrideChange={(val) => update({ capabilitiesOverride: val || undefined })}
+					onReset={() => update({ capabilitiesOverride: undefined })}
+					overrideLabel={t("settings:systemPrompt.overrideLabel")}
+					resetLabel={t("settings:systemPrompt.resetToDefault")}
+					defaultPlaceholder="- You have access to tools that let you execute CLI commands..."
+				/>
+
+				{/* Modes note */}
+				<div className="mb-4 pb-4 border-b border-vscode-input-border">
+					<div className="text-sm text-vscode-descriptionForeground italic">
+						{t("settings:systemPrompt.modesNote")}
+					</div>
+				</div>
+
+				{/* Rules */}
+				<SectionRow
+					label={t("settings:systemPrompt.rules")}
+					enabled={systemPromptSections.rulesEnabled !== false}
+					onToggle={(enabled) => update({ rulesEnabled: enabled })}
+					overrideValue={systemPromptSections.rulesOverride}
+					onOverrideChange={(val) => update({ rulesOverride: val || undefined })}
+					onReset={() => update({ rulesOverride: undefined })}
+					overrideLabel={t("settings:systemPrompt.overrideLabel")}
+					resetLabel={t("settings:systemPrompt.resetToDefault")}
+					defaultPlaceholder="- The project base directory is: ..."
+				/>
+
+				{/* Objective */}
+				<SectionRow
+					label={t("settings:systemPrompt.objective")}
+					enabled={systemPromptSections.objectiveEnabled !== false}
+					onToggle={(enabled) => update({ objectiveEnabled: enabled })}
+					overrideValue={systemPromptSections.objectiveOverride}
+					onOverrideChange={(val) => update({ objectiveOverride: val || undefined })}
+					onReset={() => update({ objectiveOverride: undefined })}
+					overrideLabel={t("settings:systemPrompt.overrideLabel")}
+					resetLabel={t("settings:systemPrompt.resetToDefault")}
+					defaultPlaceholder="You accomplish a given task iteratively, breaking it down into clear steps..."
+				/>
+			</Section>
+		</div>
+	)
+}

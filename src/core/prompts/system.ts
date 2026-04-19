@@ -25,6 +25,11 @@ import {
 	getSkillsSection,
 } from "./sections"
 
+const DEFAULT_ROLE_PLACEHOLDER =
+	"IMPORTANT: Pay close attention to role and instruction sections that will appear " +
+	"in the conversation. When you see a [ROLE AND INSTRUCTIONS] block, treat it as " +
+	"your active persona and follow it precisely."
+
 // Helper function to get prompt component, filtering out empty objects
 export function getPromptComponent(
 	customModePrompts: CustomModePrompts | undefined,
@@ -75,37 +80,72 @@ async function generatePrompt(
 	const effectiveProtocol = "native"
 
 	const [modesSection, skillsSection] = await Promise.all([
-		getModesSection(context),
+		getModesSection(context, mode), // pass current mode slug for modesExcluded filtering
 		getSkillsSection(skillsManager, mode as string),
 	])
 
 	// Tools catalog is not included in the system prompt.
 	const toolsCatalog = ""
 
-	const basePrompt = `${roleDefinition}
+	const sec = settings?.sections ?? {}
 
-${markdownFormattingSection()}
+	// Role content
+	let roleContent: string
+	if (sec.roleEnabled === false) {
+		roleContent = ""
+	} else if (sec.roleInSystemPrompt === false) {
+		roleContent = sec.roleDisabledPlaceholder?.trim() || DEFAULT_ROLE_PLACEHOLDER
+	} else {
+		roleContent = roleDefinition
+	}
 
-${getSharedToolUseSection()}${toolsCatalog}
+	// Build prompt parts
+	const promptParts: string[] = []
 
-	${getToolUseGuidelinesSection()}
+	if (roleContent) promptParts.push(roleContent)
 
-${getCapabilitiesSection(cwd, shouldIncludeMcp ? mcpHub : undefined)}
+	if (sec.markdownRulesEnabled !== false) promptParts.push(markdownFormattingSection(sec.markdownRulesOverride))
 
-${modesSection}
-${skillsSection ? `\n${skillsSection}` : ""}
-${getRulesSection(cwd, settings)}
+	if (sec.toolUseEnabled !== false) {
+		const toolUseText = getSharedToolUseSection(sec.toolUseOverride)
+		const guidelinesText = getToolUseGuidelinesSection(sec.toolUseGuidelinesOverride)
+		promptParts.push(`${toolUseText}${toolsCatalog}\n\n\t${guidelinesText}`)
+	}
 
-${getSystemInfoSection(cwd)}
+	if (sec.capabilitiesEnabled !== false)
+		promptParts.push(getCapabilitiesSection(cwd, shouldIncludeMcp ? mcpHub : undefined, sec.capabilitiesOverride))
 
-${getObjectiveSection()}
+	// MODES always included (content filtered by modesExcluded per-mode)
+	promptParts.push(modesSection)
 
-${await addCustomInstructions(baseInstructions, globalCustomInstructions || "", cwd, mode, {
-	language: language ?? formatLanguage(vscode.env.language),
-	rooIgnoreInstructions,
-	settings,
-})}`
+	if (skillsSection) promptParts.push(skillsSection)
 
+	if (sec.rulesEnabled !== false) promptParts.push(getRulesSection(cwd, settings, sec.rulesOverride))
+
+	promptParts.push(getSystemInfoSection(cwd))
+
+	if (sec.objectiveEnabled !== false) promptParts.push(getObjectiveSection(sec.objectiveOverride))
+
+	// Custom instructions: only when role is in system prompt
+	const includeCustomInstructions =
+		sec.roleEnabled !== false && sec.customInstructionsEnabled !== false && sec.roleInSystemPrompt !== false
+
+	if (includeCustomInstructions) {
+		const customInstructionsText = await addCustomInstructions(
+			baseInstructions,
+			globalCustomInstructions || "",
+			cwd,
+			mode,
+			{
+				language: language ?? formatLanguage(vscode.env.language),
+				rooIgnoreInstructions,
+				settings,
+			},
+		)
+		if (customInstructionsText) promptParts.push(customInstructionsText)
+	}
+
+	const basePrompt = promptParts.filter(Boolean).join("\n\n")
 	return basePrompt
 }
 

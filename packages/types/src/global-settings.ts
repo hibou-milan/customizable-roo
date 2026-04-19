@@ -75,6 +75,35 @@ export const MAX_CHECKPOINT_TIMEOUT_SECONDS = 60
 export const DEFAULT_CHECKPOINT_TIMEOUT_SECONDS = 15
 
 /**
+ * SystemPromptSections
+ */
+
+export const systemPromptSectionsSchema = z.object({
+	// Per-section enable/disable (default: true for all)
+	roleEnabled: z.boolean().optional(),
+	markdownRulesEnabled: z.boolean().optional(),
+	toolUseEnabled: z.boolean().optional(),
+	capabilitiesEnabled: z.boolean().optional(),
+	rulesEnabled: z.boolean().optional(),
+	objectiveEnabled: z.boolean().optional(),
+	customInstructionsEnabled: z.boolean().optional(),
+
+	// Per-section text overrides (undefined or "" = use default)
+	markdownRulesOverride: z.string().optional(),
+	toolUseOverride: z.string().optional(),
+	toolUseGuidelinesOverride: z.string().optional(),
+	capabilitiesOverride: z.string().optional(),
+	rulesOverride: z.string().optional(),
+	objectiveOverride: z.string().optional(),
+
+	// Role/instructions decoupling
+	roleInSystemPrompt: z.boolean().optional(), // default: true
+	roleDisabledPlaceholder: z.string().optional(), // shown in system prompt when role moved to conversation
+})
+
+export type SystemPromptSections = z.infer<typeof systemPromptSectionsSchema>
+
+/**
  * GlobalSettings
  */
 
@@ -232,6 +261,12 @@ export const globalSettingsSchema = z.object({
 	 * Tools in this list will be excluded from prompt generation and rejected at execution time.
 	 */
 	disabledTools: z.array(toolNamesSchema).optional(),
+
+	/**
+	 * Per-section configuration for the system prompt.
+	 * Controls which sections are enabled and allows overriding their content.
+	 */
+	systemPromptSections: systemPromptSectionsSchema.optional(),
 })
 
 export type GlobalSettings = z.infer<typeof globalSettingsSchema>

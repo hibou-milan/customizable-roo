@@ -28,6 +28,7 @@
 	"sections": {
 		"providers": "Providers",
 		"modes": "Modes",
+		"systemPrompt": "System Prompt",
 		"mcp": "MCP Servers",
 		"worktrees": "Worktrees",
 		"skills": "Skills",
@@ -42,6 +43,28 @@
 		"experimental": "Experimental",
 		"language": "Language",
 		"about": "About Roo Code"
+	},
+	"systemPrompt": {
+		"title": "System Prompt",
+		"description": "Configure which sections appear in the system prompt and optionally override their content. Disabling a section removes it entirely; leaving the override empty uses the built-in default.",
+		"roleSection": "Role & Custom Instructions",
+		"roleInSystemPrompt": "Include in system prompt",
+		"roleInConversation": "Move to conversation",
+		"rolePlaceholderLabel": "Placeholder text (shown in system prompt when role is moved to conversation)",
+		"rolePlaceholderReset": "Reset placeholder to default",
+		"markdownRules": "Markdown Rules",
+		"toolUse": "Tool Use",
+		"capabilities": "Capabilities",
+		"modesNote": "Modes section is always included. Use the Modes tab to configure per-mode exclusion from mode switching.",
+		"rules": "Rules",
+		"objective": "Objective",
+		"overrideLabel": "Override text (empty = use built-in default)",
+		"resetToDefault": "Reset to default",
+		"sectionEnabled": "Include this section"
+	},
+	"modes": {
+		"modesExcluded": "Exclude from mode switching",
+		"modesExcludedDescription": "When enabled, this mode will not appear in other modes' available modes list and will not be prompted to switch to other modes. Useful for self-contained workflows that should stay within a single mode."
 	},
 	"about": {
 		"bugReport": {

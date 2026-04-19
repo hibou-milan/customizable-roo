@@ -1,8 +1,8 @@
 import delay from "delay"
 
-import { Task } from "../task/Task"
+import { Task, buildRoleInjectionBlock } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
-import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
+import { defaultModeSlug, getModeBySlug, getModeSelection } from "../../shared/modes"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
 
@@ -57,6 +57,28 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 
 			// Switch the mode using shared handler
 			await task.providerRef.deref()?.handleModeSwitch(mode_slug)
+
+			// Inject role/instructions change notification if role is not in system prompt
+			const postSwitchState = await task.providerRef.deref()?.getState()
+			const postSwitchSections = postSwitchState?.systemPromptSections ?? {}
+
+			if (postSwitchSections.roleEnabled !== false && postSwitchSections.roleInSystemPrompt === false) {
+				const { customModes, customModePrompts } = postSwitchState ?? {}
+				const newModeConfig = getModeBySlug(mode_slug, customModes)
+				const { roleDefinition, baseInstructions } = getModeSelection(
+					mode_slug,
+					customModePrompts?.[mode_slug],
+					customModes,
+				)
+
+				const warningBlock =
+					`⚠️ [ROLE AND INSTRUCTIONS CHANGE]\n\n` +
+					`The previous role and instructions are now SUPERSEDED. ` +
+					`Disregard any prior [ROLE AND INSTRUCTIONS] sections.\n\n` +
+					buildRoleInjectionBlock(newModeConfig?.name ?? mode_slug, roleDefinition, baseInstructions)
+
+				await task.injectConversationMessage(warningBlock)
+			}
 
 			pushToolResult(
 				`Successfully switched from ${getModeBySlug(currentMode)?.name ?? currentMode} mode to ${

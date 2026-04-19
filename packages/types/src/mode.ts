@@ -102,6 +102,7 @@ export const modeConfigSchema = z.object({
 	customInstructions: z.string().optional(),
 	groups: groupEntryArraySchema,
 	source: z.enum(["global", "project"]).optional(),
+	modesExcluded: z.boolean().optional(), // When true, hide from other modes' MODES section
 })
 
 export type ModeConfig = z.infer<typeof modeConfigSchema>

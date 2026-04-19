@@ -29,6 +29,7 @@ import {
 	ArrowLeft,
 	GitCommitVertical,
 	GraduationCap,
+	SlidersHorizontal,
 } from "lucide-react"
 
 import {
@@ -79,6 +80,7 @@ import { SlashCommandsSettings } from "./SlashCommandsSettings"
 import { SkillsSettings } from "./SkillsSettings"
 import { UISettings } from "./UISettings"
 import ModesView from "../modes/ModesView"
+import { SystemPromptSettingsView } from "./SystemPromptSettingsView"
 import McpView from "../mcp/McpView"
 import { WorktreesView } from "../worktrees/WorktreesView"
 import { SettingsSearch } from "./SettingsSearch"
@@ -105,6 +107,7 @@ export const sectionNames = [
 	"contextManagement",
 	"terminal",
 	"modes",
+	"systemPrompt",
 	"mcp",
 	"worktrees",
 	"prompts",
@@ -203,6 +206,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		includeCurrentTime,
 		includeCurrentCost,
 		maxGitStatusFiles,
+		systemPromptSections,
 	} = cachedState
 
 	const apiConfiguration = useMemo(() => cachedState.apiConfiguration ?? {}, [cachedState.apiConfiguration])
@@ -422,6 +426,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					openRouterImageGenerationSelectedModel,
 					experiments,
 					customSupportPrompts,
+					systemPromptSections: systemPromptSections ?? {},
 				},
 			})
 
@@ -510,6 +515,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		() => [
 			{ id: "providers", icon: Plug },
 			{ id: "modes", icon: Users2 },
+			{ id: "systemPrompt", icon: SlidersHorizontal },
 			{ id: "skills", icon: GraduationCap },
 			{ id: "slashCommands", icon: SquareSlash },
 			{ id: "autoApprove", icon: CheckCheck },
@@ -868,6 +874,14 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 
 						{/* Modes Section */}
 						{renderTab === "modes" && <ModesView />}
+
+						{/* System Prompt Section */}
+						{renderTab === "systemPrompt" && (
+							<SystemPromptSettingsView
+								systemPromptSections={systemPromptSections ?? {}}
+								setSystemPromptSections={(val) => setCachedStateField("systemPromptSections", val)}
+							/>
+						)}
 
 						{/* MCP Section */}
 						{renderTab === "mcp" && <McpView />}

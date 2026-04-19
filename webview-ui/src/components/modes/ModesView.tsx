@@ -1293,6 +1293,29 @@ const ModesView = () => {
 					</div>
 				</div>
 
+				{/* modesExcluded — only for custom modes */}
+				{findModeBySlug(visualMode, customModes) && (
+					<div className="mb-4 pb-4 border-b border-vscode-input-border">
+						<VSCodeCheckbox
+							checked={findModeBySlug(visualMode, customModes)?.modesExcluded ?? false}
+							onChange={(e) => {
+								const customMode = findModeBySlug(visualMode, customModes)
+								if (customMode) {
+									updateCustomMode(visualMode, {
+										...customMode,
+										modesExcluded: (e.target as HTMLInputElement).checked,
+										source: customMode.source || "global",
+									})
+								}
+							}}>
+							<span className="font-medium">{t("settings:modes.modesExcluded")}</span>
+						</VSCodeCheckbox>
+						<div className="text-sm text-vscode-descriptionForeground mt-1 ml-6">
+							{t("settings:modes.modesExcludedDescription")}
+						</div>
+					</div>
+				)}
+
 				<div className="pb-4 border-b border-vscode-input-border">
 					<div className="flex gap-2 mb-4">
 						<Button
