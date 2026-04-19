@@ -7,6 +7,9 @@ import {
 	DEFAULT_TOOL_USE_TEXT,
 	DEFAULT_OBJECTIVE_TEXT,
 	DEFAULT_ROLE_PLACEHOLDER,
+	DEFAULT_CAPABILITIES_TEXT,
+	DEFAULT_RULES_TEXT,
+	DEFAULT_SYSTEM_INFO_TEXT,
 } from "@roo-code/types"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
@@ -76,7 +79,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
 							className="w-full"
 						/>
 						<div className="flex gap-1 items-start flex-shrink-0 mt-0.5">
-							{!isDynamic && onSetToDefault && (
+							{onSetToDefault && (
 								<Button
 									variant="ghost"
 									size="icon"
@@ -227,6 +230,7 @@ export const SystemPromptSettingsView: React.FC<SystemPromptSettingsViewProps> =
 					overrideValue={systemPromptSections.capabilitiesOverride}
 					onOverrideChange={(val) => update({ capabilitiesOverride: val || undefined })}
 					onReset={() => update({ capabilitiesOverride: undefined })}
+					onSetToDefault={() => update({ capabilitiesOverride: DEFAULT_CAPABILITIES_TEXT })}
 					isDynamic={true}
 					overrideLabel={t("settings:systemPrompt.overrideLabelDynamic")}
 					resetLabel={t("settings:systemPrompt.clearOverride")}
@@ -248,6 +252,7 @@ export const SystemPromptSettingsView: React.FC<SystemPromptSettingsViewProps> =
 					overrideValue={systemPromptSections.rulesOverride}
 					onOverrideChange={(val) => update({ rulesOverride: val || undefined })}
 					onReset={() => update({ rulesOverride: undefined })}
+					onSetToDefault={() => update({ rulesOverride: DEFAULT_RULES_TEXT })}
 					isDynamic={true}
 					overrideLabel={t("settings:systemPrompt.overrideLabelDynamic")}
 					resetLabel={t("settings:systemPrompt.clearOverride")}
@@ -262,6 +267,7 @@ export const SystemPromptSettingsView: React.FC<SystemPromptSettingsViewProps> =
 					overrideValue={systemPromptSections.systemInfoOverride}
 					onOverrideChange={(val) => update({ systemInfoOverride: val || undefined })}
 					onReset={() => update({ systemInfoOverride: undefined })}
+					onSetToDefault={() => update({ systemInfoOverride: DEFAULT_SYSTEM_INFO_TEXT })}
 					isDynamic={true}
 					overrideLabel={t("settings:systemPrompt.overrideLabelDynamic")}
 					resetLabel={t("settings:systemPrompt.clearOverride")}
