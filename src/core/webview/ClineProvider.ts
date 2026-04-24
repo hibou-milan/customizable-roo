@@ -45,6 +45,8 @@ import {
 	DEFAULT_MODES,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	getModelId,
+	modelIdKeys,
+	modelIdKeysByProvider,
 	isRetiredProvider,
 } from "@roo-code/types"
 import { aggregateTaskCostsRecursive, type AggregatedCosts } from "./aggregateTaskCosts"
@@ -1072,8 +1074,26 @@ export class ClineProvider
 			)
 		}
 
-		const { apiConfiguration, enableCheckpoints, checkpointTimeout, experiments, cloudUserInfo, taskSyncEnabled } =
+		let { apiConfiguration, enableCheckpoints, checkpointTimeout, experiments, cloudUserInfo, taskSyncEnabled } =
 			await this.getState()
+
+		// Restore per-chat model if available in history.
+		if (historyItem.apiProvider && historyItem.apiModelId) {
+			const restoredConfig: ProviderSettings = {
+				...apiConfiguration,
+				apiProvider: historyItem.apiProvider as ProviderName,
+			}
+			// Clear all model ID keys to avoid stale values from the previous provider.
+			for (const key of modelIdKeys) {
+				delete (restoredConfig as any)[key]
+			}
+			// Set the correct model ID key for the stored provider.
+			const modelIdKey = modelIdKeysByProvider[historyItem.apiProvider as keyof typeof modelIdKeysByProvider]
+			if (modelIdKey) {
+				;(restoredConfig as any)[modelIdKey] = historyItem.apiModelId
+			}
+			apiConfiguration = restoredConfig
+		}
 
 		const task = new Task({
 			provider: this,
@@ -1576,6 +1596,10 @@ export class ClineProvider
 
 				// Keep the current task's sticky provider profile in sync with the newly-activated profile.
 				await this.persistStickyProviderProfileToCurrentTask(name)
+
+				// Update the current task's stored provider and model.
+				const modelId = getModelId(providerSettings)
+				await this.persistTaskModelToCurrentTask(providerSettings.apiProvider, modelId)
 			} else {
 				await this.updateGlobalState("listApiConfigMeta", await this.providerSettingsManager.listConfig())
 			}
@@ -1643,6 +1667,35 @@ export class ClineProvider
 		}
 	}
 
+	private async persistTaskModelToCurrentTask(
+		apiProvider: string | undefined,
+		apiModelId: string | undefined,
+	): Promise<void> {
+		const task = this.getCurrentTask()
+		if (!task) {
+			return
+		}
+
+		try {
+			task.setTaskApiProvider(apiProvider)
+			task.setTaskApiModelId(apiModelId)
+
+			const taskHistoryItem =
+				this.taskHistoryStore.get(task.taskId) ??
+				(this.getGlobalState("taskHistory") ?? []).find((item) => item.id === task.taskId)
+
+			if (taskHistoryItem) {
+				await this.updateTaskHistory({ ...taskHistoryItem, apiProvider, apiModelId })
+			}
+		} catch (error) {
+			this.log(
+				`Failed to persist task model for task ${task.taskId}: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
+			)
+		}
+	}
+
 	async activateProviderProfile(
 		args: { name: string } | { id: string },
 		options?: { persistModeConfig?: boolean; persistTaskHistory?: boolean },
@@ -1673,6 +1726,10 @@ export class ClineProvider
 		if (persistTaskHistory) {
 			await this.persistStickyProviderProfileToCurrentTask(name)
 		}
+
+		// Update the current task's stored provider and model.
+		const modelId = getModelId(providerSettings)
+		await this.persistTaskModelToCurrentTask(providerSettings.apiProvider, modelId)
 
 		await this.postStateToWebview()
 

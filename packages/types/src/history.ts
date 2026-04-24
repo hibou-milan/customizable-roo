@@ -20,6 +20,8 @@ export const historyItemSchema = z.object({
 	workspace: z.string().optional(),
 	mode: z.string().optional(),
 	apiConfigName: z.string().optional(), // Provider profile name for sticky profile feature
+	apiProvider: z.string().optional(), // Provider ID for per-chat model persistence
+	apiModelId: z.string().optional(), // Model ID for per-chat model persistence
 	status: z.enum(["active", "completed", "delegated"]).optional(),
 	delegatedToId: z.string().optional(), // Last child this parent delegated to
 	childIds: z.array(z.string()).optional(), // All children spawned by this task

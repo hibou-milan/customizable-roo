@@ -278,6 +278,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	 * @see {@link taskApiConfigName} - For sync access after initialization
 	 */
 	private _taskApiConfigName: string | undefined
+	private _taskApiProvider: string | undefined
+	private _taskApiModelId: string | undefined
 
 	/**
 	 * Promise that resolves when the task API config name has been initialized.
@@ -537,6 +539,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		if (historyItem) {
 			this._taskMode = historyItem.mode || defaultModeSlug
 			this._taskApiConfigName = historyItem.apiConfigName
+			this._taskApiProvider = historyItem.apiProvider
+			this._taskApiModelId = historyItem.apiModelId
 			this.taskModeReady = Promise.resolve()
 			this.taskApiConfigReady = Promise.resolve()
 			TelemetryService.instance.captureTaskRestarted(this.taskId)
@@ -544,6 +548,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// For new tasks, don't set the mode/apiConfigName yet - wait for async initialization.
 			this._taskMode = undefined
 			this._taskApiConfigName = undefined
+			this._taskApiProvider = apiConfiguration.apiProvider
+			this._taskApiModelId = getModelId(apiConfiguration)
 			this.taskModeReady = this.initializeTaskMode(provider)
 			this.taskApiConfigReady = this.initializeTaskApiConfigName(provider)
 			TelemetryService.instance.captureTaskCreated(this.taskId)
@@ -869,6 +875,22 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	 */
 	public setTaskApiConfigName(apiConfigName: string | undefined): void {
 		this._taskApiConfigName = apiConfigName
+	}
+
+	public get taskApiProvider(): string | undefined {
+		return this._taskApiProvider
+	}
+
+	public setTaskApiProvider(apiProvider: string | undefined): void {
+		this._taskApiProvider = apiProvider
+	}
+
+	public get taskApiModelId(): string | undefined {
+		return this._taskApiModelId
+	}
+
+	public setTaskApiModelId(apiModelId: string | undefined): void {
+		this._taskApiModelId = apiModelId
 	}
 
 	static create(options: TaskOptions): [Task, Promise<void>] {
@@ -1274,6 +1296,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				workspace: this.cwd,
 				mode: this._taskMode || defaultModeSlug, // Use the task's own mode, not the current provider mode.
 				apiConfigName: this._taskApiConfigName, // Use the task's own provider profile, not the current provider profile.
+				apiProvider: this._taskApiProvider, // Use the task's own provider, not the current provider.
+				apiModelId: this._taskApiModelId, // Use the task's own model, not the current model.
 				initialStatus: this.initialStatus,
 			})
 

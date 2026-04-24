@@ -23,6 +23,10 @@ export type TaskMetadataOptions = {
 	mode?: string
 	/** Provider profile name for the task (sticky profile feature) */
 	apiConfigName?: string
+	/** Provider ID for per-chat model persistence */
+	apiProvider?: string
+	/** Model ID for per-chat model persistence */
+	apiModelId?: string
 	/** Initial status for the task (e.g., "active" for child tasks) */
 	initialStatus?: "active" | "delegated" | "completed"
 }
@@ -37,6 +41,8 @@ export async function taskMetadata({
 	workspace,
 	mode,
 	apiConfigName,
+	apiProvider,
+	apiModelId,
 	initialStatus,
 }: TaskMetadataOptions) {
 	const taskDir = await getTaskDirectoryPath(globalStoragePath, id)
@@ -111,6 +117,8 @@ export async function taskMetadata({
 		workspace,
 		mode,
 		...(typeof apiConfigName === "string" && apiConfigName.length > 0 ? { apiConfigName } : {}),
+		...(typeof apiProvider === "string" && apiProvider.length > 0 ? { apiProvider } : {}),
+		...(typeof apiModelId === "string" && apiModelId.length > 0 ? { apiModelId } : {}),
 		...(initialStatus && { status: initialStatus }),
 	}
 

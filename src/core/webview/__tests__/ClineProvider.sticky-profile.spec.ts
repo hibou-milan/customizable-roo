@@ -74,8 +74,11 @@ vi.mock("../../task/Task", () => ({
 		parentTask: options.parentTask,
 		updateApiConfiguration: vi.fn(),
 		setTaskApiConfigName: vi.fn(),
+		setTaskApiProvider: vi.fn(),
+		setTaskApiModelId: vi.fn(),
 		_taskApiConfigName: options.historyItem?.apiConfigName,
 		taskApiConfigName: options.historyItem?.apiConfigName,
+		apiConfiguration: options.apiConfiguration,
 	})),
 }))
 
@@ -962,6 +965,115 @@ describe("ClineProvider - Sticky Provider Profile", () => {
 			expect(logSpy).toHaveBeenCalledWith(
 				expect.stringContaining("Failed to restore API configuration 'failing-profile' for task"),
 			)
+		})
+	})
+
+	describe("Per-chat model persistence", () => {
+		it("should restore stored provider and model when resuming a task from history", async () => {
+			await provider.resolveWebviewView(mockWebviewView)
+
+			// Create a history item with stored provider and model
+			const historyItem: HistoryItem = {
+				id: "test-task-id",
+				number: 1,
+				ts: Date.now(),
+				task: "Test task",
+				tokensIn: 100,
+				tokensOut: 200,
+				cacheWrites: 0,
+				cacheReads: 0,
+				totalCost: 0.001,
+				apiProvider: "openrouter",
+				apiModelId: "openai/gpt-4",
+			}
+
+			// Initialize task with history item
+			const task = await provider.createTaskWithHistoryItem(historyItem)
+
+			// Verify the task was created with the stored provider and model
+			expect((task as any).apiConfiguration.apiProvider).toBe("openrouter")
+			expect((task as any).apiConfiguration.openRouterModelId).toBe("openai/gpt-4")
+		})
+
+		it("should not override apiConfiguration when history item has no stored model", async () => {
+			await provider.resolveWebviewView(mockWebviewView)
+
+			// Create a history item without stored provider/model
+			const historyItem: HistoryItem = {
+				id: "test-task-id",
+				number: 1,
+				ts: Date.now(),
+				task: "Test task",
+				tokensIn: 100,
+				tokensOut: 200,
+				cacheWrites: 0,
+				cacheReads: 0,
+				totalCost: 0.001,
+			}
+
+			// Initialize task with history item
+			const task = await provider.createTaskWithHistoryItem(historyItem)
+
+			// Verify the task uses the global default provider/model
+			expect((task as any).apiConfiguration.apiProvider).toBeDefined()
+		})
+
+		it("should update task's stored model when activating a provider profile", async () => {
+			await provider.resolveWebviewView(mockWebviewView)
+
+			// Create a mock task
+			const mockTask = {
+				taskId: "test-task-id",
+				_taskApiConfigName: "default-profile",
+				setTaskApiConfigName: vi.fn(),
+				setTaskApiProvider: vi.fn(),
+				setTaskApiModelId: vi.fn(),
+				emit: vi.fn(),
+				saveClineMessages: vi.fn(),
+				clineMessages: [],
+				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
+			}
+
+			// Add task to provider stack
+			await provider.addClineToStack(mockTask as any)
+
+			// Populate the store
+			await provider.taskHistoryStore.upsert({
+				id: mockTask.taskId,
+				ts: Date.now(),
+				task: "Test task",
+				number: 1,
+				tokensIn: 0,
+				tokensOut: 0,
+				totalCost: 0,
+			})
+
+			// Mock providerSettingsManager.activateProfile
+			vi.spyOn(provider.providerSettingsManager, "activateProfile").mockResolvedValue({
+				name: "new-profile",
+				id: "new-profile-id",
+				apiProvider: "anthropic",
+				apiModelId: "claude-3-5-sonnet-20241022",
+			})
+
+			// Mock providerSettingsManager.listConfig
+			vi.spyOn(provider.providerSettingsManager, "listConfig").mockResolvedValue([
+				{ name: "new-profile", id: "new-profile-id", apiProvider: "anthropic" },
+			])
+
+			// Switch provider profile
+			await provider.activateProviderProfile({ name: "new-profile" }, { persistModeConfig: false })
+
+			// Verify task's stored provider and model were updated
+			expect(mockTask.setTaskApiProvider).toHaveBeenCalledWith("anthropic")
+			expect(mockTask.setTaskApiModelId).toHaveBeenCalledWith("claude-3-5-sonnet-20241022")
+
+			// Verify task history was updated
+			const taskHistory = provider.taskHistoryStore.getAll()
+			const updatedItem = taskHistory.find((item) => item.id === "test-task-id")
+			expect(updatedItem?.apiProvider).toBe("anthropic")
+			expect(updatedItem?.apiModelId).toBe("claude-3-5-sonnet-20241022")
 		})
 	})
 })
