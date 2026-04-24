@@ -914,7 +914,7 @@ describe("ClineProvider", () => {
 		expect(provider.providerSettingsManager.setModeConfig).toHaveBeenCalledWith("architect", "current-id")
 	})
 
-	it("saves config as default for current mode when loading config", async () => {
+	it("does not update mode config when loading config from a task", async () => {
 		await provider.resolveWebviewView(mockWebviewView)
 		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
@@ -933,11 +933,11 @@ describe("ClineProvider", () => {
 		// Then load the config
 		await messageHandler({ type: "loadApiConfiguration", text: "new-config" })
 
-		// Should save new config as default for architect mode
-		expect(provider.providerSettingsManager.setModeConfig).toHaveBeenCalledWith("architect", "new-id")
+		// Should NOT save new config as default for architect mode
+		expect(provider.providerSettingsManager.setModeConfig).not.toHaveBeenCalled()
 	})
 
-	it("load API configuration by ID works and updates mode config", async () => {
+	it("load API configuration by ID works without updating mode config", async () => {
 		await provider.resolveWebviewView(mockWebviewView)
 		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
 
@@ -960,11 +960,8 @@ describe("ClineProvider", () => {
 		// Then load the config by ID
 		await messageHandler({ type: "loadApiConfigurationById", text: "config-id-123" })
 
-		// Should save new config as default for architect mode
-		expect(provider.providerSettingsManager.setModeConfig).toHaveBeenCalledWith("architect", "config-id-123")
-
-		// Ensure the `activateProfile` method was called with the correct ID
-		expect(provider.providerSettingsManager.activateProfile).toHaveBeenCalledWith({ id: "config-id-123" })
+		// Should NOT save new config as default for architect mode
+		expect(provider.providerSettingsManager.setModeConfig).not.toHaveBeenCalled()
 	})
 
 	test("handles showRooIgnoredFiles setting", async () => {
@@ -1130,8 +1127,8 @@ describe("ClineProvider", () => {
 			apiConfiguration: { apiProvider: "anthropic" },
 		})
 
-		// Should save config as default for current mode
-		expect(provider.providerSettingsManager.setModeConfig).toHaveBeenCalledWith("code", "test-id")
+		// Should NOT save config as default for current mode when updating from a task
+		expect(provider.providerSettingsManager.setModeConfig).not.toHaveBeenCalled()
 	})
 
 	test("file content includes line numbers", async () => {

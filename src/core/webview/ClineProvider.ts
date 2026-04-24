@@ -1534,6 +1534,7 @@ export class ClineProvider
 		name: string,
 		providerSettings: ProviderSettings,
 		activate: boolean = true,
+		options?: { persistModeConfig?: boolean },
 	): Promise<string | undefined> {
 		try {
 			// TODO: Do we need to be calling `activateProfile`? It's not
@@ -1542,6 +1543,7 @@ export class ClineProvider
 			// we rely on the `ProviderSettingsManager`'s data store. It might
 			// be simpler to unify these two.
 			const id = await this.providerSettingsManager.saveConfig(name, providerSettings)
+			const persistModeConfig = options?.persistModeConfig ?? true
 
 			if (activate) {
 				const { mode } = await this.getState()
@@ -1556,12 +1558,17 @@ export class ClineProvider
 				// this.contextProxy.setValues({ ...providerSettings, listApiConfigMeta: ..., currentApiConfigName: ... })
 				// We should probably switch to that and verify that it works.
 				// I left the original implementation in just to be safe.
-				await Promise.all([
+				const promises: Promise<void>[] = [
 					this.updateGlobalState("listApiConfigMeta", await this.providerSettingsManager.listConfig()),
 					this.updateGlobalState("currentApiConfigName", name),
-					this.providerSettingsManager.setModeConfig(mode, id),
 					this.contextProxy.setProviderSettings(providerSettings),
-				])
+				]
+
+				if (persistModeConfig) {
+					promises.push(this.providerSettingsManager.setModeConfig(mode, id))
+				}
+
+				await Promise.all(promises)
 
 				// Change the provider for the current task.
 				// TODO: We should rename `buildApiHandler` for clarity (e.g. `getProviderClient`).
