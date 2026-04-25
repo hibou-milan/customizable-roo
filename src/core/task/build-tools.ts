@@ -14,6 +14,7 @@ import {
 	filterMcpToolsForMode,
 	resolveToolAlias,
 } from "../prompts/tools/filter-tools-for-mode"
+import { getAllModes, getModeBySlug, defaultModeSlug, getToolsForAllSwitchableModes } from "../../shared/modes"
 
 interface BuildToolsOptions {
 	provider: ClineProvider
@@ -144,11 +145,35 @@ export async function buildNativeToolsArrayWithRestrictions(options: BuildToolsO
 	// Combine filtered tools (for backward compatibility and for allowedFunctionNames)
 	const filteredTools = [...filteredNativeTools, ...filteredMcpTools, ...nativeCustomTools]
 
-	// If includeAllToolsWithRestrictions is true, return ALL tools but provide
-	// allowed names based on mode filtering
+	// If includeAllToolsWithRestrictions is true, return the union of tools from all
+	// switchable modes (modes where modesExcluded !== true) while restricting which
+	// tools can actually be called based on mode filtering.
+	// Modes with modesExcluded=true only list their own tools.
 	if (includeAllToolsWithRestrictions) {
-		// Combine ALL tools (unfiltered native + all MCP + custom)
-		const allTools = [...nativeTools, ...mcpTools, ...nativeCustomTools]
+		const modeConfig = getModeBySlug(mode ?? defaultModeSlug, customModes)
+
+		// If the current mode is excluded from context switching, only list its own tools
+		// to avoid exposing exclusive tools to/from other modes.
+		if (modeConfig?.modesExcluded === true) {
+			return {
+				tools: filteredTools,
+			}
+		}
+
+		// Compute the set of native tool names from all non-excluded switchable modes.
+		const allModes = getAllModes(customModes)
+		const switchableModeToolNames = new Set(getToolsForAllSwitchableModes(allModes))
+
+		// Filter native tools to only those belonging to at least one switchable mode.
+		const switchableNativeTools = nativeTools.filter((tool) => {
+			if ("function" in tool && tool.function) {
+				return switchableModeToolNames.has(tool.function.name)
+			}
+			return true
+		})
+
+		// Combine switchable native tools with MCP and custom tools.
+		const allTools = [...switchableNativeTools, ...mcpTools, ...nativeCustomTools]
 
 		// Extract names of tools that are allowed based on mode filtering.
 		// Resolve any alias names to canonical names to ensure consistency with allTools

@@ -4327,14 +4327,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		let allTools: OpenAI.Chat.ChatCompletionTool[] = []
 		let allowedFunctionNames: string[] | undefined
 
-		// Gemini requires all tool definitions to be present for history compatibility,
-		// but uses allowedFunctionNames to restrict which tools can be called.
-		// Other providers (Anthropic, OpenAI, etc.) don't support this feature yet,
-		// so they continue to receive only the filtered tools for the current mode.
-		const supportsAllowedFunctionNames = apiConfiguration?.apiProvider === "gemini"
 		// When role is in conversation (roleInSystemPrompt=false), always send all tools to the API
 		// so the tools array stays constant across mode switches, preserving the prompt cache.
 		// Mode restrictions are enforced via the role injection block + validateToolUse server-side.
+		// This should NOT apply when roles are in the system prompt, because the system prompt
+		// changes on mode switch anyway, and non-Gemini providers lack allowedFunctionNames.
 		const roleInConversation =
 			state?.systemPromptSections?.roleEnabled !== false &&
 			state?.systemPromptSections?.roleInSystemPrompt === false
@@ -4354,7 +4351,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				apiConfiguration,
 				disabledTools: state?.disabledTools,
 				modelInfo,
-				includeAllToolsWithRestrictions: supportsAllowedFunctionNames || roleInConversation,
+				includeAllToolsWithRestrictions: roleInConversation,
 			})
 			allTools = toolsResult.tools
 			allowedFunctionNames = toolsResult.allowedFunctionNames

@@ -41,6 +41,35 @@ export function getToolsForMode(groups: readonly GroupEntry[]): string[] {
 	return Array.from(tools)
 }
 
+/**
+ * Gets the union of all tools from modes that are switchable (modesExcluded !== true).
+ * Modes with modesExcluded=true are excluded from context switching, so their
+ * exclusive tools should not be visible to other modes.
+ */
+export function getToolsForAllSwitchableModes(allModes: readonly ModeConfig[]): string[] {
+	const tools = new Set<string>()
+
+	for (const mode of allModes) {
+		// Skip modes that are excluded from context switching
+		if (mode.modesExcluded === true) {
+			continue
+		}
+
+		for (const group of mode.groups) {
+			const groupName = getGroupName(group)
+			const groupConfig = TOOL_GROUPS[groupName]
+			if (groupConfig) {
+				groupConfig.tools.forEach((tool: string) => tools.add(tool))
+			}
+		}
+	}
+
+	// Always add required tools
+	ALWAYS_AVAILABLE_TOOLS.forEach((tool) => tools.add(tool))
+
+	return Array.from(tools)
+}
+
 // Main modes configuration as an ordered array
 export const modes = DEFAULT_MODES
 

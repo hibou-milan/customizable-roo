@@ -1,4 +1,17 @@
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import type { ModeConfig } from "@roo-code/types"
+
+// Mock CodeIndexManager to avoid vscode EventEmitter dependency.
+// Path is relative from src/core/task/__tests__/ to src/services/code-index/manager.ts
+vi.mock("../../../services/code-index/manager", () => ({
+	CodeIndexManager: {
+		getInstance: vi.fn(() => ({
+			isFeatureEnabled: true,
+			isFeatureConfigured: true,
+			isInitialized: true,
+		})),
+	},
+}))
 
 describe("Native Tools Filtering by Mode", () => {
 	describe("attemptApiRequest native tool filtering", () => {
@@ -117,6 +130,152 @@ describe("Native Tools Filtering by Mode", () => {
 			ALWAYS_AVAILABLE_TOOLS.forEach((tool) => {
 				expect(isToolAllowedForMode(tool as any, "restrictive", [restrictiveMode])).toBe(true)
 			})
+		})
+
+		it("should return only current mode tools when mode is excluded from context switching", async () => {
+			const excludedMode: ModeConfig = {
+				slug: "excluded-mode",
+				name: "Excluded Mode",
+				roleDefinition: "Test",
+				groups: ["read", "edit", "command"] as const,
+				modesExcluded: true,
+			}
+
+			const normalMode: ModeConfig = {
+				slug: "normal-mode",
+				name: "Normal Mode",
+				roleDefinition: "Test",
+				groups: ["read", "mcp"] as const,
+			}
+
+			const { buildNativeToolsArrayWithRestrictions } = await import("../build-tools")
+
+			const mockProvider = {
+				getMcpHub: vi.fn(() => ({ getServers: vi.fn(() => []) })),
+				context: {} as any,
+			}
+
+			// When in excluded mode with includeAllToolsWithRestrictions=true,
+			// should only return excluded mode's own tools
+			const result = await buildNativeToolsArrayWithRestrictions({
+				provider: mockProvider as any,
+				cwd: "/test",
+				mode: "excluded-mode",
+				customModes: [excludedMode, normalMode],
+				experiments: {},
+				apiConfiguration: {} as any,
+				includeAllToolsWithRestrictions: true,
+			})
+
+			const toolNames = result.tools.map((t: any) => t.function?.name).filter(Boolean)
+
+			// Excluded mode has read, edit, command groups
+			expect(toolNames).toContain("read_file")
+			expect(toolNames).toContain("write_to_file")
+			expect(toolNames).toContain("apply_diff")
+			expect(toolNames).toContain("execute_command")
+			expect(toolNames).toContain("read_command_output")
+
+			// But should NOT have tools exclusive to other modes (mcp tools)
+			expect(toolNames).not.toContain("use_mcp_tool")
+			expect(toolNames).not.toContain("access_mcp_resource")
+		})
+
+		it("should return union of switchable mode tools when current mode is not excluded", async () => {
+			const normalModeA: ModeConfig = {
+				slug: "normal-a",
+				name: "Normal A",
+				roleDefinition: "Test",
+				groups: ["read", "edit"] as const,
+			}
+
+			const normalModeB: ModeConfig = {
+				slug: "normal-b",
+				name: "Normal B",
+				roleDefinition: "Test",
+				groups: ["read", "command"] as const,
+			}
+
+			// Excluded mode with mcp group - its mcp tools should not be added
+			// to the union beyond what built-in modes already provide.
+			const excludedMode: ModeConfig = {
+				slug: "excluded-mode",
+				name: "Excluded Mode",
+				roleDefinition: "Test",
+				groups: ["read", "mcp"] as const,
+				modesExcluded: true,
+			}
+
+			const { buildNativeToolsArrayWithRestrictions } = await import("../build-tools")
+
+			const mockProvider = {
+				getMcpHub: vi.fn(() => ({ getServers: vi.fn(() => []) })),
+				context: {} as any,
+			}
+
+			const result = await buildNativeToolsArrayWithRestrictions({
+				provider: mockProvider as any,
+				cwd: "/test",
+				mode: "normal-a",
+				customModes: [normalModeA, normalModeB, excludedMode],
+				experiments: {},
+				apiConfiguration: {} as any,
+				includeAllToolsWithRestrictions: true,
+			})
+
+			const toolNames = result.tools.map((t: any) => t.function?.name).filter(Boolean)
+
+			// Should have tools from both normal-a and normal-b (switchable modes)
+			expect(toolNames).toContain("read_file")
+			expect(toolNames).toContain("write_to_file")
+			expect(toolNames).toContain("apply_diff")
+			expect(toolNames).toContain("execute_command")
+			expect(toolNames).toContain("read_command_output")
+
+			// allowedFunctionNames should restrict to current mode's allowed tools
+			expect(result.allowedFunctionNames).toBeDefined()
+			expect(result.allowedFunctionNames).toContain("read_file")
+			expect(result.allowedFunctionNames).toContain("write_to_file")
+			expect(result.allowedFunctionNames).toContain("apply_diff")
+			// normal-a does not have command group
+			expect(result.allowedFunctionNames).not.toContain("execute_command")
+		})
+
+		it("should return only filtered tools when includeAllToolsWithRestrictions is false", async () => {
+			const codeMode: ModeConfig = {
+				slug: "code",
+				name: "Code",
+				roleDefinition: "Test",
+				groups: ["read", "edit", "command"] as const,
+			}
+
+			const { buildNativeToolsArrayWithRestrictions } = await import("../build-tools")
+
+			const mockProvider = {
+				getMcpHub: vi.fn(() => ({ getServers: vi.fn(() => []) })),
+				context: {} as any,
+			}
+
+			const result = await buildNativeToolsArrayWithRestrictions({
+				provider: mockProvider as any,
+				cwd: "/test",
+				mode: "code",
+				customModes: [codeMode],
+				experiments: {},
+				apiConfiguration: {} as any,
+				includeAllToolsWithRestrictions: false,
+			})
+
+			const toolNames = result.tools.map((t: any) => t.function?.name).filter(Boolean)
+
+			// Code mode has read, edit, command groups
+			expect(toolNames).toContain("read_file")
+			expect(toolNames).toContain("write_to_file")
+			expect(toolNames).toContain("apply_diff")
+			expect(toolNames).toContain("execute_command")
+
+			// allowedFunctionNames should be undefined when includeAllToolsWithRestrictions is false
+			expect(result.allowedFunctionNames).toBeUndefined()
 		})
 	})
 })
