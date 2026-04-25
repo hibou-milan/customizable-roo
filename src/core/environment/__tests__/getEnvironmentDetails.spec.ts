@@ -25,6 +25,9 @@ vi.mock("vscode", () => ({
 		tabGroups: { all: [], onDidChangeTabs: vi.fn() },
 		visibleTextEditors: [],
 	},
+	workspace: {
+		workspaceFolders: undefined,
+	},
 	env: {
 		language: "en-US",
 	},

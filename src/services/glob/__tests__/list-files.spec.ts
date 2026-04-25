@@ -49,6 +49,7 @@ vi.mock("fs", () => ({
 		readFile: vi.fn().mockResolvedValue(""),
 		readdir: vi.fn().mockResolvedValue([]),
 		realpath: vi.fn().mockImplementation(async (p: string) => p),
+		stat: vi.fn().mockResolvedValue({ isDirectory: () => true }),
 	},
 }))
 
