@@ -25,7 +25,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 
 	const clineProvider = cline.providerRef.deref()
 	const state = await clineProvider?.getState()
-	const { maxWorkspaceFiles = 200, followSymlinks = false, symlinkEnvDepth = 1 } = state ?? {}
+	const { maxWorkspaceFiles = 200, symlinkEnvDepth = 1 } = state ?? {}
 
 	// It could be useful for cline to know if the user went from one or no
 	// file to another between messages, so we always include this context.
@@ -242,14 +242,14 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 				details += "(Workspace files context disabled. Use list_files to explore if needed.)"
 			} else {
 				// In env-details, always show symlinks (regardless of showSymlinks setting)
-				// but use symlinkEnvDepth for bounded traversal instead of followSymlinks
+				// and always use bounded traversal via symlinkEnvDepth
 				const [files, symlinkSet, didHitLimit] = await listFiles(
 					cline.cwd,
 					true,
 					maxFiles,
-					followSymlinks,
+					false,
 					true,
-					followSymlinks ? undefined : symlinkEnvDepth,
+					symlinkEnvDepth,
 				)
 				const { showRooIgnoredFiles = false } = state ?? {}
 
@@ -290,9 +290,9 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 						folder,
 						true,
 						maxFiles,
-						followSymlinks,
+						false,
 						true,
-						followSymlinks ? undefined : symlinkEnvDepth,
+						symlinkEnvDepth,
 					)
 					details += formatResponse.formatFilesList(
 						folder,
