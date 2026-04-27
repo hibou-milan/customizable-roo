@@ -92,6 +92,9 @@ describe("ContextManagementSettings", () => {
 		maxOpenTabsContext: 20,
 		maxWorkspaceFiles: 200,
 		showRooIgnoredFiles: false,
+		followSymlinks: false,
+		showSymlinks: false,
+		symlinkEnvDepth: 1,
 		profileThresholds: {},
 		includeDiagnosticMessages: true,
 		maxDiagnosticMessages: 50,
@@ -201,6 +204,27 @@ describe("ContextManagementSettings", () => {
 		// Check for checkboxes
 		expect(screen.getByTestId("show-rooignored-files-checkbox")).toBeInTheDocument()
 		expect(screen.getByTestId("auto-condense-context-checkbox")).toBeInTheDocument()
+	})
+
+	it("renders showSymlinks checkbox and toggles it", async () => {
+		const setCachedStateField = vi.fn()
+		render(<ContextManagementSettings {...defaultProps} setCachedStateField={setCachedStateField} />)
+
+		const checkbox = screen.getByTestId("show-symlinks-checkbox")
+		expect(checkbox).toBeInTheDocument()
+
+		fireEvent.click(checkbox.querySelector("input")!)
+		await waitFor(() => {
+			expect(setCachedStateField).toHaveBeenCalledWith("showSymlinks", true)
+		})
+	})
+
+	it("renders symlinkEnvDepth slider with correct value", () => {
+		render(<ContextManagementSettings {...defaultProps} symlinkEnvDepth={3} />)
+
+		const slider = screen.getByTestId("symlink-env-depth-slider")
+		expect(slider).toBeInTheDocument()
+		expect(screen.getByText("3")).toBeInTheDocument()
 	})
 
 	describe("Edge cases for maxDiagnosticMessages", () => {
