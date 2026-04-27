@@ -33,6 +33,7 @@
 		"worktrees": "Worktrees",
 		"skills": "Skills",
 		"autoApprove": "Auto-Approve",
+		"builtInTools": "Built-in Tools",
 		"checkpoints": "Checkpoints",
 		"notifications": "Notifications",
 		"contextManagement": "Context",
@@ -649,6 +650,19 @@
 			"maxTokensLabel": "Max Output Tokens",
 			"maxTokensDescription": "Maximum number of output tokens for Claude Code responses. Default is 8000."
 		}
+	},
+	"builtInTools": {
+		"title": "Built-in Tools",
+		"description": "Enable or disable built-in tools and customize the descriptions sent to the model.",
+		"descriptionOverride": "Description override",
+		"resetDescription": "Reset to default",
+		"resetDescriptionTooltip": "Reset this tool's description to the built-in default",
+		"expandParameters": "Show parameters",
+		"collapseParameters": "Hide parameters",
+		"parameters": "Parameters",
+		"fallbackToDefault": "Leaving blank falls back to the built-in default description.",
+		"overrideActive": "Custom description override is active.",
+		"usingDefault": "Description matches built-in default."
 	},
 	"checkpoints": {
 		"timeout": {

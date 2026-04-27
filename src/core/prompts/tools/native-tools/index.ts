@@ -31,6 +31,32 @@ export type { ReadFileToolOptions } from "./read_file"
 export interface NativeToolsOptions {
 	/** Whether the model supports image processing (default: false) */
 	supportsImages?: boolean
+	/** Per-tool description overrides. Empty/whitespace values fall back to defaults. */
+	descriptionOverrides?: Record<string, string>
+}
+
+/**
+ * Apply description overrides to a native tool definition.
+ * Returns a new tool object if an override is applied, otherwise the original.
+ */
+function applyDescriptionOverride(
+	tool: OpenAI.Chat.ChatCompletionTool,
+	overrides: Record<string, string> | undefined,
+): OpenAI.Chat.ChatCompletionTool {
+	if (!overrides || !("function" in tool) || !tool.function) {
+		return tool
+	}
+	const override = overrides[tool.function.name]?.trim()
+	if (override) {
+		return {
+			...tool,
+			function: {
+				...tool.function,
+				description: override,
+			},
+		}
+	}
+	return tool
 }
 
 /**
@@ -40,13 +66,13 @@ export interface NativeToolsOptions {
  * @returns Array of native tool definitions
  */
 export function getNativeTools(options: NativeToolsOptions = {}): OpenAI.Chat.ChatCompletionTool[] {
-	const { supportsImages = false } = options
+	const { supportsImages = false, descriptionOverrides } = options
 
 	const readFileOptions: ReadFileToolOptions = {
 		supportsImages,
 	}
 
-	return [
+	const tools: OpenAI.Chat.ChatCompletionTool[] = [
 		accessMcpResource,
 		apply_diff,
 		applyPatch,
@@ -68,7 +94,9 @@ export function getNativeTools(options: NativeToolsOptions = {}): OpenAI.Chat.Ch
 		switchMode,
 		updateTodoList,
 		writeToFile,
-	] satisfies OpenAI.Chat.ChatCompletionTool[]
+	]
+
+	return tools.map((tool) => applyDescriptionOverride(tool, descriptionOverrides))
 }
 
 // Backward compatibility: export default tools with line ranges enabled

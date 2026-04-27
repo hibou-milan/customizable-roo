@@ -284,6 +284,13 @@ export const globalSettingsSchema = z.object({
 	disabledTools: z.array(toolNamesSchema).optional(),
 
 	/**
+	 * Per-tool description overrides for native tools.
+	 * Keys are tool names, values are the override description strings.
+	 * Empty/whitespace values fall back to the built-in default.
+	 */
+	toolDescriptionOverrides: z.record(toolNamesSchema, z.string()).optional(),
+
+	/**
 	 * Per-section configuration for the system prompt.
 	 * Controls which sections are enabled and allows overriding their content.
 	 */

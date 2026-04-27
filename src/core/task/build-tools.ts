@@ -24,6 +24,7 @@ interface BuildToolsOptions {
 	experiments: Record<string, boolean> | undefined
 	apiConfiguration: ProviderSettings | undefined
 	disabledTools?: string[]
+	toolDescriptionOverrides?: Record<string, string>
 	modelInfo?: ModelInfo
 	/**
 	 * If true, returns all tools without mode filtering, but also includes
@@ -89,6 +90,7 @@ export async function buildNativeToolsArrayWithRestrictions(options: BuildToolsO
 		experiments,
 		apiConfiguration,
 		disabledTools,
+		toolDescriptionOverrides,
 		modelInfo,
 		includeAllToolsWithRestrictions,
 	} = options
@@ -112,6 +114,7 @@ export async function buildNativeToolsArrayWithRestrictions(options: BuildToolsO
 	// Build native tools with dynamic read_file tool based on settings.
 	const nativeTools = getNativeTools({
 		supportsImages,
+		descriptionOverrides: toolDescriptionOverrides,
 	})
 
 	// Filter native tools based on mode restrictions.

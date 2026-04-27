@@ -1740,6 +1740,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				experiments: state?.experiments,
 				apiConfiguration,
 				disabledTools: state?.disabledTools,
+				toolDescriptionOverrides: state?.toolDescriptionOverrides,
 				modelInfo,
 				includeAllToolsWithRestrictions: false,
 			})
@@ -3969,6 +3970,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				experiments: state?.experiments,
 				apiConfiguration,
 				disabledTools: state?.disabledTools,
+				toolDescriptionOverrides: state?.toolDescriptionOverrides,
 				modelInfo,
 				includeAllToolsWithRestrictions: false,
 			})
@@ -4183,6 +4185,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						experiments: state?.experiments,
 						apiConfiguration,
 						disabledTools: state?.disabledTools,
+						toolDescriptionOverrides: state?.toolDescriptionOverrides,
 						modelInfo,
 						includeAllToolsWithRestrictions: false,
 					})
@@ -4350,6 +4353,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				experiments: state?.experiments,
 				apiConfiguration,
 				disabledTools: state?.disabledTools,
+				toolDescriptionOverrides: state?.toolDescriptionOverrides,
 				modelInfo,
 				includeAllToolsWithRestrictions: roleInConversation,
 			})

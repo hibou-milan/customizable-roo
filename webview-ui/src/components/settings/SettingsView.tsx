@@ -30,6 +30,7 @@ import {
 	GitCommitVertical,
 	GraduationCap,
 	SlidersHorizontal,
+	Wrench,
 } from "lucide-react"
 
 import {
@@ -85,6 +86,7 @@ import McpView from "../mcp/McpView"
 import { WorktreesView } from "../worktrees/WorktreesView"
 import { SettingsSearch } from "./SettingsSearch"
 import { useSearchIndexRegistry, SearchIndexProvider } from "./useSettingsSearch"
+import { BuiltInToolsSettings } from "./BuiltInToolsSettings"
 
 export const settingsTabsContainer = "flex flex-1 overflow-hidden [&.narrow_.tab-label]:hidden"
 export const settingsTabList =
@@ -100,6 +102,7 @@ export interface SettingsViewRef {
 export const sectionNames = [
 	"providers",
 	"autoApprove",
+	"builtInTools",
 	"slashCommands",
 	"skills",
 	"checkpoints",
@@ -210,6 +213,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		includeCurrentCost,
 		maxGitStatusFiles,
 		systemPromptSections,
+		disabledTools,
+		toolDescriptionOverrides,
 	} = cachedState
 
 	const apiConfiguration = useMemo(() => cachedState.apiConfiguration ?? {}, [cachedState.apiConfiguration])
@@ -433,6 +438,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					experiments,
 					customSupportPrompts,
 					systemPromptSections: systemPromptSections ?? {},
+					disabledTools: disabledTools ?? [],
+					toolDescriptionOverrides: toolDescriptionOverrides ?? {},
 				},
 			})
 
@@ -525,6 +532,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 			{ id: "skills", icon: GraduationCap },
 			{ id: "slashCommands", icon: SquareSlash },
 			{ id: "autoApprove", icon: CheckCheck },
+			{ id: "builtInTools", icon: Wrench },
 			{ id: "mcp", icon: Server },
 			{ id: "checkpoints", icon: GitCommitVertical },
 			{ id: "notifications", icon: Bell },
@@ -807,6 +815,15 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								allowedMaxRequests={allowedMaxRequests ?? undefined}
 								allowedMaxCost={allowedMaxCost ?? undefined}
 								deniedCommands={deniedCommands}
+								setCachedStateField={setCachedStateField}
+							/>
+						)}
+
+						{/* Built-in Tools Section */}
+						{renderTab === "builtInTools" && (
+							<BuiltInToolsSettings
+								disabledTools={disabledTools ?? []}
+								toolDescriptionOverrides={toolDescriptionOverrides ?? {}}
 								setCachedStateField={setCachedStateField}
 							/>
 						)}
