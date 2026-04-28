@@ -277,5 +277,97 @@ describe("Native Tools Filtering by Mode", () => {
 			// allowedFunctionNames should be undefined when includeAllToolsWithRestrictions is false
 			expect(result.allowedFunctionNames).toBeUndefined()
 		})
+
+		it("should exclude disabled tools from allTools when includeAllToolsWithRestrictions is true", async () => {
+			const codeMode: ModeConfig = {
+				slug: "code",
+				name: "Code",
+				roleDefinition: "Test",
+				groups: ["read", "edit", "command"] as const,
+			}
+
+			const { buildNativeToolsArrayWithRestrictions } = await import("../build-tools")
+
+			const mockProvider = {
+				getMcpHub: vi.fn(() => ({ getServers: vi.fn(() => []) })),
+				context: {} as any,
+			}
+
+			const result = await buildNativeToolsArrayWithRestrictions({
+				provider: mockProvider as any,
+				cwd: "/test",
+				mode: "code",
+				customModes: [codeMode],
+				experiments: {},
+				apiConfiguration: {} as any,
+				includeAllToolsWithRestrictions: true,
+				disabledTools: ["execute_command", "codebase_search"],
+			})
+
+			const toolNames = result.tools.map((t: any) => t.function?.name).filter(Boolean)
+
+			// Disabled tools should NOT appear even in includeAllToolsWithRestrictions mode
+			expect(toolNames).not.toContain("execute_command")
+			expect(toolNames).not.toContain("codebase_search")
+
+			// Other tools should still be present
+			expect(toolNames).toContain("read_file")
+			expect(toolNames).toContain("write_to_file")
+			expect(toolNames).toContain("apply_diff")
+
+			// allowedFunctionNames should also exclude disabled tools
+			expect(result.allowedFunctionNames).toBeDefined()
+			expect(result.allowedFunctionNames).not.toContain("execute_command")
+			expect(result.allowedFunctionNames).not.toContain("codebase_search")
+		})
+
+		it("should exclude codebase_search from allTools when code indexing is not available and includeAllToolsWithRestrictions is true", async () => {
+			const codeMode: ModeConfig = {
+				slug: "code",
+				name: "Code",
+				roleDefinition: "Test",
+				groups: ["read", "edit", "command"] as const,
+			}
+
+			// Override the CodeIndexManager mock for this test
+			const { CodeIndexManager } = await import("../../../services/code-index/manager")
+			vi.mocked(CodeIndexManager.getInstance).mockReturnValue({
+				isFeatureEnabled: false,
+				isFeatureConfigured: false,
+				isInitialized: false,
+			} as any)
+
+			const { buildNativeToolsArrayWithRestrictions } = await import("../build-tools")
+
+			const mockProvider = {
+				getMcpHub: vi.fn(() => ({ getServers: vi.fn(() => []) })),
+				context: {} as any,
+			}
+
+			const result = await buildNativeToolsArrayWithRestrictions({
+				provider: mockProvider as any,
+				cwd: "/test",
+				mode: "code",
+				customModes: [codeMode],
+				experiments: {},
+				apiConfiguration: {} as any,
+				includeAllToolsWithRestrictions: true,
+			})
+
+			const toolNames = result.tools.map((t: any) => t.function?.name).filter(Boolean)
+
+			// codebase_search should NOT appear when indexing is unavailable
+			expect(toolNames).not.toContain("codebase_search")
+
+			// Other tools should still be present
+			expect(toolNames).toContain("read_file")
+			expect(toolNames).toContain("write_to_file")
+			expect(toolNames).toContain("apply_diff")
+			expect(toolNames).toContain("execute_command")
+
+			// allowedFunctionNames should also exclude codebase_search
+			expect(result.allowedFunctionNames).toBeDefined()
+			expect(result.allowedFunctionNames).not.toContain("codebase_search")
+		})
 	})
 })

@@ -167,16 +167,66 @@ export async function buildNativeToolsArrayWithRestrictions(options: BuildToolsO
 		const allModes = getAllModes(customModes)
 		const switchableModeToolNames = new Set(getToolsForAllSwitchableModes(allModes))
 
-		// Filter native tools to only those belonging to at least one switchable mode.
+		// Build the set of globally excluded tool names (same logic as filterNativeToolsForMode).
+		// These exclusions apply regardless of mode so that disabled/unavailable tools
+		// are not sent to the model even when includeAllToolsWithRestrictions is true.
+		const globallyExcludedToolNames = new Set<string>()
+		if (
+			!codeIndexManager ||
+			!(
+				codeIndexManager.isFeatureEnabled &&
+				codeIndexManager.isFeatureConfigured &&
+				codeIndexManager.isInitialized
+			)
+		) {
+			globallyExcludedToolNames.add("codebase_search")
+		}
+		if (filterSettings.todoListEnabled === false) {
+			globallyExcludedToolNames.add("update_todo_list")
+		}
+		if (!experiments?.imageGeneration) {
+			globallyExcludedToolNames.add("generate_image")
+		}
+		if (!experiments?.runSlashCommand) {
+			globallyExcludedToolNames.add("run_slash_command")
+		}
+		if (disabledTools?.length) {
+			for (const toolName of disabledTools) {
+				globallyExcludedToolNames.add(resolveToolAlias(toolName))
+			}
+		}
+		if (!mcpHub || !mcpHub.getServers().some((server) => server.resources && server.resources.length > 0)) {
+			globallyExcludedToolNames.add("access_mcp_resource")
+		}
+
+		// Filter native tools to only those belonging to at least one switchable mode
+		// AND not globally excluded.
 		const switchableNativeTools = nativeTools.filter((tool) => {
 			if ("function" in tool && tool.function) {
-				return switchableModeToolNames.has(tool.function.name)
+				const toolName = tool.function.name
+				return switchableModeToolNames.has(toolName) && !globallyExcludedToolNames.has(toolName)
 			}
 			return true
 		})
 
-		// Combine switchable native tools with MCP and custom tools.
-		const allTools = [...switchableNativeTools, ...mcpTools, ...nativeCustomTools]
+		// Filter MCP tools to exclude globally disabled ones.
+		const globallyAllowedMcpTools = mcpTools.filter((tool) => {
+			if ("function" in tool && tool.function) {
+				return !globallyExcludedToolNames.has(tool.function.name)
+			}
+			return true
+		})
+
+		// Filter custom tools to exclude globally disabled ones.
+		const globallyAllowedCustomTools = nativeCustomTools.filter((tool) => {
+			if ("function" in tool && tool.function) {
+				return !globallyExcludedToolNames.has(tool.function.name)
+			}
+			return true
+		})
+
+		// Combine switchable native tools with globally allowed MCP and custom tools.
+		const allTools = [...switchableNativeTools, ...globallyAllowedMcpTools, ...globallyAllowedCustomTools]
 
 		// Extract names of tools that are allowed based on mode filtering.
 		// Resolve any alias names to canonical names to ensure consistency with allTools
