@@ -551,6 +551,12 @@
 			"description": "Mengontrol seberapa detail respons model. Verbositas rendah menghasilkan jawaban singkat, sedangkan verbositas tinggi memberikan penjelasan menyeluruh."
 		},
 		"setReasoningLevel": "Aktifkan Upaya Reasoning",
+		"overrideThinkingType": "Ganti Tipe Pemikiran",
+		"thinkingType": {
+			"label": "Tipe Pemikiran",
+			"enabled": "Aktif",
+			"disabled": "Nonaktif"
+		},
 		"claudeCode": {
 			"pathLabel": "Jalur Kode Claude",
 			"description": "Jalur opsional ke Claude Code CLI Anda. Defaultnya adalah 'claude' jika tidak diatur.",

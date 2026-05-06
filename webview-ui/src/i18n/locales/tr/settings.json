@@ -551,6 +551,12 @@
 			"description": "Modelin yanıtlarının ne kadar ayrıntılı olduğunu kontrol eder. Düşük ayrıntı düzeyi kısa yanıtlar üretirken, yüksek ayrıntı düzeyi kapsamlı açıklamalar sunar."
 		},
 		"setReasoningLevel": "Akıl Yürütme Çabasını Etkinleştir",
+		"overrideThinkingType": "Düşünme Türünü Geçersiz Kıl",
+		"thinkingType": {
+			"label": "Düşünme Türü",
+			"enabled": "Etkin",
+			"disabled": "Devre Dışı"
+		},
 		"claudeCode": {
 			"pathLabel": "Claude Code Yolu",
 			"description": "Claude Code CLI'nize isteğe bağlı yol. Ayarlanmazsa varsayılan olarak 'claude' kullanılır.",

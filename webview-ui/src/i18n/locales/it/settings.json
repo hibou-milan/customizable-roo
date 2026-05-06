@@ -551,6 +551,12 @@
 			"description": "Controlla il livello di dettaglio delle risposte del modello. Una verbosity bassa produce risposte concise, mentre una verbosity alta fornisce spiegazioni approfondite."
 		},
 		"setReasoningLevel": "Abilita sforzo di ragionamento",
+		"overrideThinkingType": "Sovrascrivi tipo di ragionamento",
+		"thinkingType": {
+			"label": "Tipo di ragionamento",
+			"enabled": "Abilitato",
+			"disabled": "Disabilitato"
+		},
 		"claudeCode": {
 			"pathLabel": "Percorso Claude Code",
 			"description": "Percorso facoltativo per la tua CLI Claude Code. Predefinito 'claude' se non impostato.",

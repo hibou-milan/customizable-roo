@@ -561,6 +561,12 @@
 			"description": "控制模型回應的詳細程度。低詳細度產生簡潔的回答，而高詳細度提供詳盡的解釋。"
 		},
 		"setReasoningLevel": "啟用推理強度",
+		"overrideThinkingType": "覆寫思考類型",
+		"thinkingType": {
+			"label": "思考類型",
+			"enabled": "啟用",
+			"disabled": "停用"
+		},
 		"claudeCode": {
 			"pathLabel": "Claude Code 路徑",
 			"description": "選用的 Claude Code CLI 路徑。若未設定，預設為 'claude'。",

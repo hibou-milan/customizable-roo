@@ -551,6 +551,12 @@
 			"description": "Controla el nivell de detall de les respostes del model. La verbositat baixa produeix respostes concises, mentre que la verbositat alta proporciona explicacions exhaustives."
 		},
 		"setReasoningLevel": "Activa l'esforç de raonament",
+		"overrideThinkingType": "Anul·lar el tipus de pensament",
+		"thinkingType": {
+			"label": "Tipus de pensament",
+			"enabled": "Habilitat",
+			"disabled": "Deshabilitat"
+		},
 		"claudeCode": {
 			"pathLabel": "Ruta del Codi Claude",
 			"description": "Ruta opcional al teu CLI de Claude Code. Per defecte, 'claude' si no s'estableix.",

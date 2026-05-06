@@ -643,6 +643,12 @@
 			"description": "Controls how detailed the model's responses are. Low verbosity produces concise answers, while high verbosity provides thorough explanations."
 		},
 		"setReasoningLevel": "Enable Reasoning Effort",
+		"overrideThinkingType": "Override Thinking Type",
+		"thinkingType": {
+			"label": "Thinking Type",
+			"enabled": "Enabled",
+			"disabled": "Disabled"
+		},
 		"claudeCode": {
 			"pathLabel": "Claude Code Path",
 			"description": "Optional path to your Claude Code CLI. Defaults to 'claude' if not set.",

@@ -98,8 +98,10 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 			parallel_tool_calls: metadata?.parallelToolCalls ?? true,
 		}
 
-		// Add thinking parameter if reasoning is enabled and model supports it
-		if (this.options.enableReasoningEffort && info.supportsReasoningBinary) {
+		// Add thinking parameter if override is set or legacy conditions are met
+		if (this.options.overrideThinkingType) {
+			;(params as any).thinking = { type: this.options.thinkingType || "enabled" }
+		} else if (this.options.enableReasoningEffort && info.supportsReasoningBinary) {
 			;(params as any).thinking = { type: "enabled" }
 		}
 
@@ -227,8 +229,10 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 			messages: [{ role: "user", content: prompt }],
 		}
 
-		// Add thinking parameter if reasoning is enabled and model supports it
-		if (this.options.enableReasoningEffort && modelInfo.supportsReasoningBinary) {
+		// Add thinking parameter if override is set or legacy conditions are met
+		if (this.options.overrideThinkingType) {
+			;(params as any).thinking = { type: this.options.thinkingType || "enabled" }
+		} else if (this.options.enableReasoningEffort && modelInfo.supportsReasoningBinary) {
 			;(params as any).thinking = { type: "enabled" }
 		}
 

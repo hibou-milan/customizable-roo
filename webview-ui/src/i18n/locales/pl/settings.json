@@ -551,6 +551,12 @@
 			"description": "Kontroluje, jak szczegółowe są odpowiedzi modelu. Niska szczegółowość generuje zwięzłe odpowiedzi, podczas gdy wysoka szczegółowość dostarcza dokładnych wyjaśnień."
 		},
 		"setReasoningLevel": "Włącz wysiłek rozumowania",
+		"overrideThinkingType": "Nadpisz typ myślenia",
+		"thinkingType": {
+			"label": "Typ myślenia",
+			"enabled": "Włączone",
+			"disabled": "Wyłączone"
+		},
 		"claudeCode": {
 			"pathLabel": "Ścieżka Claude Code",
 			"description": "Opcjonalna ścieżka do Twojego CLI Claude Code. Domyślnie 'claude', jeśli nie ustawiono.",

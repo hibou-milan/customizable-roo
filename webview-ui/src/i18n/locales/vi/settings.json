@@ -551,6 +551,12 @@
 			"description": "Kiểm soát mức độ chi tiết của các câu trả lời của mô hình. Mức độ chi tiết thấp tạo ra các câu trả lời ngắn gọn, trong khi mức độ chi tiết cao cung cấp giải thích kỹ lưỡng."
 		},
 		"setReasoningLevel": "Kích hoạt nỗ lực suy luận",
+		"overrideThinkingType": "Ghi đè loại suy nghĩ",
+		"thinkingType": {
+			"label": "Loại suy nghĩ",
+			"enabled": "Bật",
+			"disabled": "Tắt"
+		},
 		"claudeCode": {
 			"pathLabel": "Đường dẫn Claude Code",
 			"description": "Đường dẫn tùy chọn đến Claude Code CLI của bạn. Mặc định là 'claude' nếu không được đặt.",

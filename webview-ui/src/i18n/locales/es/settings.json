@@ -551,6 +551,12 @@
 			"description": "Controla qué tan detalladas son las respuestas del modelo. La verbosidad baja produce respuestas concisas, mientras que la verbosidad alta proporciona explicaciones exhaustivas."
 		},
 		"setReasoningLevel": "Habilitar esfuerzo de razonamiento",
+		"overrideThinkingType": "Anular tipo de pensamiento",
+		"thinkingType": {
+			"label": "Tipo de pensamiento",
+			"enabled": "Habilitado",
+			"disabled": "Deshabilitado"
+		},
 		"claudeCode": {
 			"pathLabel": "Ruta de Claude Code",
 			"description": "Ruta opcional a su CLI de Claude Code. Por defecto, es 'claude' si no se establece.",

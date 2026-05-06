@@ -551,6 +551,12 @@
 			"description": "Steuert, wie detailliert die Antworten des Modells sind. Niedrige Ausführlichkeit erzeugt knappe Antworten, während hohe Ausführlichkeit gründliche Erklärungen liefert."
 		},
 		"setReasoningLevel": "Denkaufwand aktivieren",
+		"overrideThinkingType": "Denktyp überschreiben",
+		"thinkingType": {
+			"label": "Denktyp",
+			"enabled": "Aktiviert",
+			"disabled": "Deaktiviert"
+		},
 		"claudeCode": {
 			"pathLabel": "Claude-Code-Pfad",
 			"description": "Optionaler Pfad zu Ihrer Claude Code CLI. Standard ist 'claude', wenn nicht festgelegt.",

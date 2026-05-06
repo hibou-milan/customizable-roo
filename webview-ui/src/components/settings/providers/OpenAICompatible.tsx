@@ -14,7 +14,15 @@ import {
 } from "@roo-code/types"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
-import { Button, StandardTooltip } from "@src/components/ui"
+import {
+	Button,
+	StandardTooltip,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@src/components/ui"
 
 import { convertHeadersToObject } from "../utils/headers"
 import { inputEventTransform, noTransform } from "../transforms"
@@ -275,6 +283,30 @@ export const OpenAICompatible = ({
 							supportsReasoningEffort: ["low", "medium", "high", "xhigh"],
 						}}
 					/>
+				)}
+			</div>
+			<div className="flex flex-col gap-1">
+				<Checkbox
+					checked={apiConfiguration.overrideThinkingType ?? false}
+					onChange={(checked: boolean) => {
+						setApiConfigurationField("overrideThinkingType", checked)
+					}}>
+					{t("settings:providers.overrideThinkingType")}
+				</Checkbox>
+				{!!apiConfiguration.overrideThinkingType && (
+					<Select
+						value={apiConfiguration.thinkingType || "enabled"}
+						onValueChange={(value: "enabled" | "disabled") => {
+							setApiConfigurationField("thinkingType", value)
+						}}>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder={t("settings:providers.thinkingType.label")} />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="enabled">{t("settings:providers.thinkingType.enabled")}</SelectItem>
+							<SelectItem value="disabled">{t("settings:providers.thinkingType.disabled")}</SelectItem>
+						</SelectContent>
+					</Select>
 				)}
 			</div>
 			<div className="flex flex-col gap-3">

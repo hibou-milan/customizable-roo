@@ -551,6 +551,12 @@
 			"description": "Bepaalt hoe gedetailleerd de reacties van het model zijn. Lage uitvoerbaarheid levert beknopte antwoorden op, terwijl hoge uitvoerbaarheid uitgebreide uitleg geeft."
 		},
 		"setReasoningLevel": "Redeneervermogen inschakelen",
+		"overrideThinkingType": "Denktype overschrijven",
+		"thinkingType": {
+			"label": "Denktype",
+			"enabled": "Ingeschakeld",
+			"disabled": "Uitgeschakeld"
+		},
 		"claudeCode": {
 			"pathLabel": "Claude Code Pad",
 			"description": "Optioneel pad naar uw Claude Code CLI. Standaard 'claude' als niet ingesteld.",

@@ -193,6 +193,10 @@ const baseProviderSettingsSchema = z.object({
 	modelMaxTokens: z.number().optional(),
 	modelMaxThinkingTokens: z.number().optional(),
 
+	// Thinking type override (for providers that support binary thinking).
+	overrideThinkingType: z.boolean().optional(),
+	thinkingType: z.enum(["enabled", "disabled"]).optional(),
+
 	// Model verbosity.
 	verbosity: verbosityLevelsSchema.optional(),
 })
