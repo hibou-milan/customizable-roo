@@ -288,6 +288,7 @@
 		}
 	},
 	"providers": {
+		"moveRoleToConversation": "Move role to conversation",
 		"providerDocumentation": "{{provider}} Dokümantasyonu",
 		"configProfile": "Yapılandırma Profili",
 		"description": "Sağlayıcılar ve ayarlar arasında hızlıca geçiş yapmak için farklı API yapılandırmalarını kaydedin.",

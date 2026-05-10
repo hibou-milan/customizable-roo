@@ -1,4 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react"
+import { Checkbox } from "vscrui"
 import { convertHeadersToObject } from "./utils/headers"
 import { useDebounce } from "react-use"
 import { VSCodeLink, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
@@ -781,6 +782,14 @@ const ApiOptions = ({
 							setApiConfigurationField={setApiConfigurationField}
 							modelInfo={selectedModelInfo}
 						/>
+					)}
+					{!fromWelcomeView && (
+						<Checkbox
+							checked={apiConfiguration.moveRoleToConversation ?? false}
+							onChange={(checked: boolean) => setApiConfigurationField("moveRoleToConversation", checked)}
+							data-testid="move-role-to-conversation-checkbox">
+							<span className="font-medium">{t("settings:providers.moveRoleToConversation")}</span>
+						</Checkbox>
 					)}
 
 					{!fromWelcomeView && (

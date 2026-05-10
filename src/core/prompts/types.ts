@@ -3,8 +3,11 @@ import type { SystemPromptSections } from "@roo-code/types"
 /**
  * Per-section settings for system prompt generation.
  * Re-exported from @roo-code/types for convenience.
+ * Includes `moveRoleToConversation` which is merged in from the active API configuration.
  */
-export type SystemPromptSectionSettings = SystemPromptSections
+export type SystemPromptSectionSettings = SystemPromptSections & {
+	moveRoleToConversation?: boolean
+}
 
 /**
  * Settings passed to system prompt generation functions

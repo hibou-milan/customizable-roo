@@ -150,18 +150,18 @@ describe("SYSTEM_PROMPT section toggles", () => {
 			expect(prompt).not.toContain(modes[0].roleDefinition)
 		})
 
-		it("replaces role with placeholder when roleInSystemPrompt=false", async () => {
-			const prompt = await buildPrompt({ roleInSystemPrompt: false })
+		it("replaces role with placeholder when moveRoleToConversation=true", async () => {
+			const prompt = await buildPrompt({ moveRoleToConversation: true })
 			// Should NOT contain the actual role definition
 			expect(prompt).not.toContain(modes[0].roleDefinition)
 			// Should contain the placeholder text
 			expect(prompt).toContain("[ROLE AND INSTRUCTIONS]")
 		})
 
-		it("uses custom placeholder when roleInSystemPrompt=false and roleDisabledPlaceholder is set", async () => {
+		it("uses custom placeholder when moveRoleToConversation=true and roleDisabledPlaceholder is set", async () => {
 			const customPlaceholder = "Custom role placeholder text"
 			const prompt = await buildPrompt({
-				roleInSystemPrompt: false,
+				moveRoleToConversation: true,
 				roleDisabledPlaceholder: customPlaceholder,
 			})
 			expect(prompt).toContain(customPlaceholder)
@@ -170,7 +170,7 @@ describe("SYSTEM_PROMPT section toggles", () => {
 
 		it("falls back to default placeholder when roleDisabledPlaceholder is empty", async () => {
 			const prompt = await buildPrompt({
-				roleInSystemPrompt: false,
+				moveRoleToConversation: true,
 				roleDisabledPlaceholder: "",
 			})
 			// Should use the default placeholder
@@ -306,16 +306,16 @@ describe("SYSTEM_PROMPT section toggles", () => {
 		})
 	})
 
-	// ─── Custom instructions excluded when roleInSystemPrompt=false ────────────
+	// ─── Custom instructions excluded when moveRoleToConversation=true ────────────
 
 	describe("custom instructions exclusion", () => {
-		it("excludes custom instructions when roleInSystemPrompt=false", async () => {
+		it("excludes custom instructions when moveRoleToConversation=true", async () => {
 			const { addCustomInstructions } = await import("../sections/custom-instructions")
 			const mockAddCustomInstructions = vi.mocked(addCustomInstructions)
 
-			await buildPrompt({ roleInSystemPrompt: false })
+			await buildPrompt({ moveRoleToConversation: true })
 
-			// addCustomInstructions should NOT be called when roleInSystemPrompt=false
+			// addCustomInstructions should NOT be called when moveRoleToConversation=true
 			expect(mockAddCustomInstructions).not.toHaveBeenCalled()
 		})
 

@@ -288,6 +288,7 @@
 		}
 	},
 	"providers": {
+		"moveRoleToConversation": "Move role to conversation",
 		"providerDocumentation": "Documentació de {{provider}}",
 		"configProfile": "Perfil de configuració",
 		"description": "Deseu diferents configuracions d'API per canviar ràpidament entre proveïdors i configuracions.",

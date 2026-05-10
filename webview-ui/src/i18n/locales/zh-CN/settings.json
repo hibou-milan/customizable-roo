@@ -288,6 +288,7 @@
 		}
 	},
 	"providers": {
+		"moveRoleToConversation": "Move role to conversation",
 		"providerDocumentation": "{{provider}} 文档",
 		"configProfile": "配置文件",
 		"description": "保存多组API配置便于快速切换",

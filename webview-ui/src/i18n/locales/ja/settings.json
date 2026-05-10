@@ -288,6 +288,7 @@
 		}
 	},
 	"providers": {
+		"moveRoleToConversation": "Move role to conversation",
 		"providerDocumentation": "{{provider}}のドキュメント",
 		"configProfile": "設定プロファイル",
 		"description": "異なるAPI設定を保存して、プロバイダーと設定をすばやく切り替えることができます。",

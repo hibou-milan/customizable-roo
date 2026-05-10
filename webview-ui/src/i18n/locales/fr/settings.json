@@ -288,6 +288,7 @@
 		}
 	},
 	"providers": {
+		"moveRoleToConversation": "Move role to conversation",
 		"providerDocumentation": "Documentation {{provider}}",
 		"configProfile": "Profil de configuration",
 		"description": "Enregistrez différentes configurations d'API pour basculer rapidement entre les fournisseurs et les paramètres.",

@@ -84,10 +84,10 @@ async function generatePrompt(
 
 	const [modesSection, skillsSection] = await Promise.all([
 		getModesSection(context, mode), // pass current mode slug for modesExcluded filtering
-		// When roleInSystemPrompt=false, omit skills from system prompt so it stays constant
+		// When moveRoleToConversation=true, omit skills from system prompt so it stays constant
 		// across mode switches (preserving the prompt cache). Skills are injected into the
 		// conversation instead via buildRoleInjectionBlock.
-		getSkillsSection(skillsManager, mode as string, sec.roleInSystemPrompt === false),
+		getSkillsSection(skillsManager, mode as string, sec.moveRoleToConversation === true),
 	])
 
 	// Tools catalog is not included in the system prompt.
@@ -101,7 +101,7 @@ async function generatePrompt(
 	let roleContent: string
 	if (sec.roleEnabled === false) {
 		roleContent = ""
-	} else if (sec.roleInSystemPrompt === false) {
+	} else if (sec.moveRoleToConversation === true) {
 		roleContent = sec.roleDisabledPlaceholder?.trim() || DEFAULT_ROLE_PLACEHOLDER
 	} else {
 		roleContent = roleDefinition
@@ -145,7 +145,7 @@ async function generatePrompt(
 
 	// Custom instructions: only when role is in system prompt
 	const includeCustomInstructions =
-		sec.roleEnabled !== false && sec.customInstructionsEnabled !== false && sec.roleInSystemPrompt !== false
+		sec.roleEnabled !== false && sec.customInstructionsEnabled !== false && sec.moveRoleToConversation !== true
 
 	if (includeCustomInstructions) {
 		const customInstructionsText = await addCustomInstructions(

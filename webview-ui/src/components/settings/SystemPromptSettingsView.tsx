@@ -1,7 +1,7 @@
 import React from "react"
 import { VSCodeCheckbox, VSCodeTextArea } from "@vscode/webview-ui-toolkit/react"
 
-import type { SystemPromptSections } from "@roo-code/types"
+import type { SystemPromptSections, ProviderSettings } from "@roo-code/types"
 import {
 	DEFAULT_MARKDOWN_RULES_TEXT,
 	DEFAULT_TOOL_USE_TEXT,
@@ -20,6 +20,7 @@ import { Button } from "@src/components/ui"
 interface SystemPromptSettingsViewProps {
 	systemPromptSections: SystemPromptSections
 	setSystemPromptSections: (val: SystemPromptSections) => void
+	apiConfiguration?: ProviderSettings
 }
 
 interface SectionRowProps {
@@ -102,6 +103,7 @@ const SectionRow: React.FC<SectionRowProps> = ({
 export const SystemPromptSettingsView: React.FC<SystemPromptSettingsViewProps> = ({
 	systemPromptSections,
 	setSystemPromptSections,
+	apiConfiguration,
 }) => {
 	const { t } = useAppTranslation()
 
@@ -110,7 +112,7 @@ export const SystemPromptSettingsView: React.FC<SystemPromptSettingsViewProps> =
 	}
 
 	const roleEnabled = systemPromptSections.roleEnabled !== false
-	const roleInSystemPrompt = systemPromptSections.roleInSystemPrompt !== false
+	const moveRoleToConversation = apiConfiguration?.moveRoleToConversation === true
 
 	return (
 		<div>
@@ -131,65 +133,45 @@ export const SystemPromptSettingsView: React.FC<SystemPromptSettingsViewProps> =
 					</div>
 					{roleEnabled && (
 						<div className="ml-6">
-							<div className="flex gap-4 mb-3">
-								<label className="flex items-center gap-2 cursor-pointer">
-									<input
-										type="radio"
-										name="roleLocation"
-										checked={roleInSystemPrompt}
-										onChange={() => update({ roleInSystemPrompt: true })}
-									/>
-									<span className="text-sm">{t("settings:systemPrompt.roleInSystemPrompt")}</span>
-								</label>
-								<label className="flex items-center gap-2 cursor-pointer">
-									<input
-										type="radio"
-										name="roleLocation"
-										checked={!roleInSystemPrompt}
-										onChange={() => update({ roleInSystemPrompt: false })}
-									/>
-									<span className="text-sm">{t("settings:systemPrompt.roleInConversation")}</span>
-								</label>
+							<div
+								className={`text-xs mb-2 ${moveRoleToConversation ? "text-vscode-foreground font-medium" : "text-vscode-descriptionForeground"}`}>
+								{moveRoleToConversation
+									? t("settings:systemPrompt.placeholderActiveNote")
+									: t("settings:systemPrompt.placeholderInactiveNote")}
 							</div>
-							{!roleInSystemPrompt && (
-								<div>
-									<div className="text-xs text-vscode-descriptionForeground mb-1">
-										{t("settings:systemPrompt.rolePlaceholderLabel")}
-									</div>
-									<div className="flex gap-2 items-start">
-										<VSCodeTextArea
-											resize="vertical"
-											value={systemPromptSections.roleDisabledPlaceholder ?? ""}
-											placeholder="IMPORTANT: Pay close attention to role and instruction sections that will appear in the conversation..."
-											onChange={(e) =>
-												update({
-													roleDisabledPlaceholder: (e.target as HTMLTextAreaElement).value,
-												})
-											}
-											rows={3}
-											className="w-full"
-										/>
-										<div className="flex gap-1 items-start flex-shrink-0 mt-0.5">
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() =>
-													update({ roleDisabledPlaceholder: DEFAULT_ROLE_PLACEHOLDER })
-												}
-												title={t("settings:systemPrompt.setToDefault")}>
-												<span className="codicon codicon-refresh"></span>
-											</Button>
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => update({ roleDisabledPlaceholder: undefined })}
-												title={t("settings:systemPrompt.clearOverride")}>
-												<span className="codicon codicon-discard"></span>
-											</Button>
-										</div>
-									</div>
+							<div className="text-xs text-vscode-descriptionForeground mb-1">
+								{t("settings:systemPrompt.rolePlaceholderLabel")}
+							</div>
+							<div className="flex gap-2 items-start">
+								<VSCodeTextArea
+									resize="vertical"
+									value={systemPromptSections.roleDisabledPlaceholder ?? ""}
+									placeholder="IMPORTANT: Pay close attention to role and instruction sections that will appear in the conversation..."
+									onChange={(e) =>
+										update({
+											roleDisabledPlaceholder: (e.target as HTMLTextAreaElement).value,
+										})
+									}
+									rows={3}
+									className="w-full"
+								/>
+								<div className="flex gap-1 items-start flex-shrink-0 mt-0.5">
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => update({ roleDisabledPlaceholder: DEFAULT_ROLE_PLACEHOLDER })}
+										title={t("settings:systemPrompt.setToDefault")}>
+										<span className="codicon codicon-refresh"></span>
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={() => update({ roleDisabledPlaceholder: undefined })}
+										title={t("settings:systemPrompt.clearOverride")}>
+										<span className="codicon codicon-discard"></span>
+									</Button>
 								</div>
-							)}
+							</div>
 						</div>
 					)}
 				</div>

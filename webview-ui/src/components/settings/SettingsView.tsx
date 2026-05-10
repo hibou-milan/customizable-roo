@@ -906,6 +906,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 							<SystemPromptSettingsView
 								systemPromptSections={systemPromptSections ?? {}}
 								setSystemPromptSections={(val) => setCachedStateField("systemPromptSections", val)}
+								apiConfiguration={apiConfiguration}
 							/>
 						)}
 

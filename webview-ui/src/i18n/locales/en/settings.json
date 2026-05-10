@@ -49,9 +49,9 @@
 		"title": "System Prompt",
 		"description": "Configure which sections appear in the system prompt and optionally override their content. Disabling a section removes it entirely; leaving the override empty uses the built-in default.",
 		"roleSection": "Role & Custom Instructions",
-		"roleInSystemPrompt": "Include in system prompt",
-		"roleInConversation": "Move to conversation",
-		"rolePlaceholderLabel": "Placeholder text (shown in system prompt when role is moved to conversation)",
+		"rolePlaceholderLabel": "Placeholder text (shown in system prompt when role is moved to conversation in the active API configuration profile)",
+		"placeholderActiveNote": "This placeholder is currently active because the selected API configuration profile has 'Move role to conversation' enabled.",
+		"placeholderInactiveNote": "This placeholder is currently inactive because the selected API configuration profile does not have 'Move role to conversation' enabled.",
 		"rolePlaceholderReset": "Reset placeholder to default",
 		"markdownRules": "Markdown Rules",
 		"toolUse": "Tool Use",
@@ -441,6 +441,7 @@
 				"minutes": "{{minutes}}m limit"
 			}
 		},
+		"moveRoleToConversation": "Move role to conversation",
 		"useCustomBaseUrl": "Use custom base URL",
 		"useReasoning": "Enable reasoning",
 		"useHostHeader": "Use custom Host header",

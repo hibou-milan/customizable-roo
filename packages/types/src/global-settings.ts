@@ -99,7 +99,6 @@ export const systemPromptSectionsSchema = z.object({
 	objectiveOverride: z.string().optional(),
 
 	// Role/instructions decoupling
-	roleInSystemPrompt: z.boolean().optional(), // default: true
 	roleDisabledPlaceholder: z.string().optional(), // shown in system prompt when role moved to conversation
 })
 

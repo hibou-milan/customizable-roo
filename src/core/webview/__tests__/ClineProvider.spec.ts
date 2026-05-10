@@ -1446,19 +1446,18 @@ describe("ClineProvider", () => {
 			)
 		})
 
-		test("passes systemPromptSections to SYSTEM_PROMPT when roleInSystemPrompt=false", async () => {
+		test("passes systemPromptSections to SYSTEM_PROMPT with moveRoleToConversation from apiConfiguration", async () => {
 			await provider.resolveWebviewView(mockWebviewView)
 
 			const { SYSTEM_PROMPT } = await import("../../prompts/system")
 			vi.mocked(SYSTEM_PROMPT).mockClear()
 
 			const sections = {
-				roleInSystemPrompt: false,
 				roleDisabledPlaceholder: "CUSTOM PLACEHOLDER TEXT",
 			}
 
 			vi.spyOn(provider, "getState").mockResolvedValue({
-				apiConfiguration: { apiProvider: "openrouter" as const },
+				apiConfiguration: { apiProvider: "openrouter" as const, moveRoleToConversation: true },
 				mcpEnabled: false,
 				mode: "code" as const,
 				experiments: experimentDefault,
@@ -1473,7 +1472,9 @@ describe("ClineProvider", () => {
 			const calls = vi.mocked(SYSTEM_PROMPT).mock.calls
 			const lastCall = calls[calls.length - 1]
 			// The 13th argument (index 12) is the settings object
-			expect(lastCall[12]).toMatchObject({ sections })
+			expect(lastCall[12]).toMatchObject({
+				sections: { ...sections, moveRoleToConversation: true },
+			})
 		})
 
 		test("passes systemPromptSections=undefined to SYSTEM_PROMPT when not set in state", async () => {

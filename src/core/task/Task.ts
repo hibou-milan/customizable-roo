@@ -141,7 +141,7 @@ const MAX_CONTEXT_WINDOW_RETRIES = 3 // Maximum retries for context window error
 
 /**
  * Builds a role/instructions injection block for conversation injection.
- * Used when roleInSystemPrompt=false to inject role context into the conversation.
+ * Used when moveRoleToConversation=true to inject role context into the conversation.
  */
 export function buildRoleInjectionBlock(
 	modeName: string,
@@ -917,7 +917,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	/**
 	 * Injects a message directly into the API conversation history without going through the UI.
-	 * Used for silent injections like role/instructions when roleInSystemPrompt=false.
+	 * Used for silent injections like role/instructions when moveRoleToConversation=true.
 	 */
 	public async injectConversationMessage(text: string): Promise<void> {
 		await this.addToApiConversationHistory({
@@ -2046,7 +2046,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			const taskState = await this.providerRef.deref()?.getState()
 			const taskSections = taskState?.systemPromptSections ?? {}
 
-			if (taskSections.roleEnabled !== false && taskSections.roleInSystemPrompt === false) {
+			if (taskSections.roleEnabled !== false && taskState?.apiConfiguration?.moveRoleToConversation === true) {
 				const { mode, customModes, customModePrompts } = taskState ?? {}
 				const currentModeSlug = mode ?? defaultModeSlug
 				const currentModeConfig = getModeBySlug(currentModeSlug, customModes)
@@ -3915,7 +3915,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						.getConfiguration(Package.name)
 						.get<boolean>("newTaskRequireTodos", false),
 					isStealthModel: modelInfo?.isStealthModel,
-					sections: systemPromptSections,
+					sections: {
+						...systemPromptSections,
+						moveRoleToConversation: apiConfiguration?.moveRoleToConversation,
+					},
 				},
 				undefined, // todoList
 				this.api.getModel().id,
@@ -4330,14 +4333,14 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		let allTools: OpenAI.Chat.ChatCompletionTool[] = []
 		let allowedFunctionNames: string[] | undefined
 
-		// When role is in conversation (roleInSystemPrompt=false), always send all tools to the API
+		// When role is in conversation (moveRoleToConversation=true), always send all tools to the API
 		// so the tools array stays constant across mode switches, preserving the prompt cache.
 		// Mode restrictions are enforced via the role injection block + validateToolUse server-side.
 		// This should NOT apply when roles are in the system prompt, because the system prompt
 		// changes on mode switch anyway, and non-Gemini providers lack allowedFunctionNames.
 		const roleInConversation =
 			state?.systemPromptSections?.roleEnabled !== false &&
-			state?.systemPromptSections?.roleInSystemPrompt === false
+			state?.apiConfiguration?.moveRoleToConversation === true
 
 		{
 			const provider = this.providerRef.deref()

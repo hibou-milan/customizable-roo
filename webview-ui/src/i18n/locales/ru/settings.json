@@ -288,6 +288,7 @@
 		}
 	},
 	"providers": {
+		"moveRoleToConversation": "Move role to conversation",
 		"providerDocumentation": "Документация {{provider}}",
 		"configProfile": "Профиль конфигурации",
 		"description": "Сохраняйте различные конфигурации API для быстрого переключения между провайдерами и настройками.",

@@ -19,7 +19,7 @@ function escapeXml(value: string): string {
  * @param skillsManager - The SkillsManager instance
  * @param currentMode - The current mode slug (e.g., 'code', 'architect')
  * @param omitFromSystemPrompt - When true, returns "" so the section is injected into the
- *   conversation instead (used when roleInSystemPrompt=false to keep the system prompt
+ *   conversation instead (used when moveRoleToConversation=true to keep the system prompt
  *   constant across mode switches and preserve the prompt cache).
  */
 export async function getSkillsSection(
@@ -39,7 +39,7 @@ export async function getSkillsSection(
 
 /**
  * Build the skills section content string for a given list of skills and mode.
- * Extracted so it can be reused for conversation injection (roleInSystemPrompt=false).
+ * Extracted so it can be reused for conversation injection (moveRoleToConversation=true).
  */
 export function buildSkillsSectionContent(
 	skills: Array<{ name: string; description: string; path: string }>,

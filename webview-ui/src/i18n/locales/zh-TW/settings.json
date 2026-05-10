@@ -298,6 +298,7 @@
 		"selectOptionsFirst": "請先選取下方至少一個選項以啟用自動核准"
 	},
 	"providers": {
+		"moveRoleToConversation": "Move role to conversation",
 		"providerDocumentation": "{{provider}} 說明文件",
 		"configProfile": "設定檔",
 		"description": "儲存不同的 API 設定以快速切換供應商和設定。",

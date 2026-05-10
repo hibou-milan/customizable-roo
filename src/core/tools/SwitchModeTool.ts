@@ -64,7 +64,10 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 			const postSwitchSections = postSwitchState?.systemPromptSections ?? {}
 
 			let roleInjectionSuffix = ""
-			if (postSwitchSections.roleEnabled !== false && postSwitchSections.roleInSystemPrompt === false) {
+			if (
+				postSwitchSections.roleEnabled !== false &&
+				postSwitchState?.apiConfiguration?.moveRoleToConversation === true
+			) {
 				const { customModes, customModePrompts } = postSwitchState ?? {}
 				const newModeConfig = getModeBySlug(mode_slug, customModes)
 				const { roleDefinition, baseInstructions } = getModeSelection(

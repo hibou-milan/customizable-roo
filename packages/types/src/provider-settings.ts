@@ -199,6 +199,9 @@ const baseProviderSettingsSchema = z.object({
 
 	// Model verbosity.
 	verbosity: verbosityLevelsSchema.optional(),
+
+	// Role/instructions location.
+	moveRoleToConversation: z.boolean().optional(), // default: false
 })
 
 // Several of the providers share common model config properties.
